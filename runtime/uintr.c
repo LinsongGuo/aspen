@@ -58,13 +58,21 @@ void concord_func() {
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
         // uintr_recv[myk()->kthread_idx]++;
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
      	thread_yield();
+    #endif
 	}
     else {
         set_upreempt_needed();
     }
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
@@ -112,18 +120,26 @@ void __attribute__ ((interrupt))
      ui_handler(struct __uintr_frame *ui_frame,
 		unsigned long long vector) {
 		
-	// ++uintr_recv[vector];        
+	++uintr_recv[vector];        
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
         // ++uintr_recv[vector];
-        thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 	}
     else {
         set_upreempt_needed();
     }
  
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
@@ -135,15 +151,24 @@ void signal_handler(int signum) {
 		set_upreempt_needed();
 		return;
 	}
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
 bool pending_uthreads(int kidx) {
 #ifdef DIRECTPATH
     return ACCESS_ONCE(ks[kidx]->rq_tail) != ACCESS_ONCE(ks[kidx]->rq_head);
+    //|| ACCESS_ONCE(ks[kidx]->preempted_rq_tail) != ACCESS_ONCE(ks[kidx]->preempted_rq_head);
 #else
     return true;
 #endif
@@ -208,8 +233,12 @@ void* uintr_timer(void*) {
                 continue;
             }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
+                #ifdef SMART_PREEMPT
                 if (pending_uthreads(i) || pending_cqe(i)) {
+                #endif
                     // printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
+                    // printf("preempt: %d %d %d\n", i, ks[i]->rq_head - ks[i]->rq_tail, ks[i]->preempted_rq_head - ks[i]->preempted_rq_tail);
+                    // printf("preempt: %d %d\n", i, ks[i]->rq_head - ks[i]->rq_tail);
 #ifdef UINTR_PREEMPT
                     _senduipi(uipi_index[i]);
 #elif defined(CONCORD_PREEMPT)
@@ -219,7 +248,9 @@ void* uintr_timer(void*) {
 #endif
                     ++uintr_sent[i];
                     ACCESS_ONCE(last[i]) = current;
+                #ifdef SMART_PREEMPT
                 }
+                #endif
             }   
         }
     } 
@@ -338,6 +369,8 @@ int uintr_init_thread(void) {
     }
     uintr_fd[kth_id] = uintr_fd_; 
 
+    _stui();
+        
     return 0;
 }
 

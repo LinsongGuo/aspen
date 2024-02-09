@@ -53,6 +53,10 @@ extern void set_uthread_specific(uint64_t val);
  */
 
 extern void thread_yield(void);
+extern void thread_new_task(void);
+#ifdef PREEMPTED_RQ
+extern void thread_preempt_yield(void);
+#endif
 extern int thread_spawn(thread_fn_t fn, void *arg);
 extern void thread_exit(void) __noreturn;
 

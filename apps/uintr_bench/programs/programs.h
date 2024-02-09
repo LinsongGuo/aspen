@@ -21,4 +21,11 @@ long long array();
 
 long long cmp();
 void cmp_init();
+
+long long cache_unfriendly();
+
+long long cache_friendly();
+
+long long cache_stripe();
+
 #endif // PROGRAMS_H

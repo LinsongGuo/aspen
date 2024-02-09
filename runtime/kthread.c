@@ -73,6 +73,10 @@ int kthread_init_thread(void)
 	if (!mykthread)
 		return -ENOMEM;
 
+#ifdef PREEMPTED_RQ
+	mykthread->preempted_rq_head = mykthread->preempted_rq_tail = UINT32_MAX / 2;
+#endif
+
 	spin_lock_np(&klock);
 	mykthread->kthread_idx = nrks;
 	ks[nrks++] = mykthread;
@@ -292,6 +296,7 @@ void kthread_wait_to_attach(void)
 		s = ioctl(ksched_fd, KSCHED_IOC_START, 0);
 	} while (s < 0);
 
+	log_info("get core for kth-%d", myk()->kthread_idx);
 	k->curr_cpu = s;
 	store_release(&cpu_map[s].recent_kthread, k);
 

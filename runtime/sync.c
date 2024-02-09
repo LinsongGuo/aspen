@@ -413,6 +413,7 @@ void waitgroup_wait(waitgroup_t *wg)
 		return;
 	}
 	list_add_tail(&wg->waiters, &myth->link);
+	// printf("waitgroup_wait: %d\n", myk()->kthread_idx);
 	thread_park_and_unlock_np(&wg->lock);
 }
 

@@ -53,7 +53,7 @@ ROCKSDB_LIB_CONCORDF=rocksdb_func/librocksdb_concord.a
 # ROCKSDB_LIB_CONCORD=rocksdb_nopt/librocksdb_concord.a
 
 OPT_CONFIG=-postdomtree -mem2reg -indvars -loop-simplify -branch-prob -scalar-evolution 
-CONCORD_PASS=$(ROOT_DIR)/../../../concord/src/cache-line-pass/build/src/libConcordPass.so
+CONCORD_PASS=$(ROOT_DIR)/../../concord/src/cache-line-pass/build/src/libConcordPass.so
 
 all: clean concord-rocksdb rocksdb_server rocksdb_server_concord rocksdb_server_concord_fl rocksdb_server_concord_f
 

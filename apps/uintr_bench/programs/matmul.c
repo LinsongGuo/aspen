@@ -79,31 +79,8 @@ double calc(int n) {
 }
 
 long long matmul() {
-  int n = 1100;
-/*
-  _clui();
-  // printf("p1\n");
-  double left = calc(101);
-  double right = -18.67; 
-  // printf("p2\n");
-  // _stui();
+  int n = 1000;
 
-  // _clui();
-  if (fabs(left - right) > 0.1) {
-    fprintf(stderr, "%f != %f\n", left, right);
-    exit(EXIT_FAILURE);
-  }
-  _stui();
-*/
-  // notify_with_pid("C/" COMPILER);
- // _clui();
   double results = calc(n);
-  //_stui();
-  // notify("stop");
   return (long long)results*1e6;
-  // return fabs(results + 191.1) < 0.1; 
-  // _clui();
- //  printf("%f\n", results);
- // _stui();
-
 }

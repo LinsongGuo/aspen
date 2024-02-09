@@ -18,3 +18,9 @@ CONFIG_CLANG=n
 CONFIG_UNSAFE_PREEMPT=simdreg
 # preemption mechanism: signal or uintr
 CONFIG_PREEMPT=uintr
+# only use general-purpose registers or not
+CONFIG_GPR_ONLY=n
+# do you want to enable smart preemption policy
+CONFIG_SMART_PREEMPT=y
+# do you want to have a separate runqueue for preempted uthreads
+CONFIG_PREEMPTED_RQ=y

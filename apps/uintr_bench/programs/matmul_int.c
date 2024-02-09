@@ -78,7 +78,7 @@ int calc_int(int n) {
 }
 
 long long matmul_int() {
-  int n = 1300;
+  int n = 1000;
 
   int results = calc_int(n);
 

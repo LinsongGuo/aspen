@@ -119,6 +119,17 @@ ifeq ($(CONFIG_PREEMPT),concord)
 FLAGS += -DCONCORD_PREEMPT
 endif 
 
+ifeq ($(CONFIG_GPR_ONLY),y)
+FLAGS += -DGPR_ONLY
+endif
+
+ifeq ($(CONFIG_SMART_PREEMPT), y)
+FLAGS += -DSMART_PREEMPT
+endif
+
+ifeq ($(CONFIG_PREEMPTED_RQ), y)
+FLAGS += -DPREEMPTED_RQ
+endif
 
 WRAP_FLAGS = -Wl,-wrap=malloc -Wl,-wrap=free -Wl,-wrap=realloc -Wl,-wrap=calloc -Wl,-wrap=aligned_alloc -Wl,-wrap=posix_memalign
 ifeq ($(CONFIG_UNSAFE_PREEMPT),flag)

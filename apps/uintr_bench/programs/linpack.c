@@ -3,10 +3,8 @@
 // # include <math.h>
 # include <time.h>
 
-#include <x86intrin.h>
-
+// #include <x86intrin.h>
 #include "programs.h"
-
 
 double cpu_time ( );
 void daxpy ( int n, double da, double dx[], int incx, double dy[], int incy );
@@ -64,10 +62,10 @@ long long linpack() {
   double resid_max;
   double residn;
   double *rhs;
-  double t1;
-  double t2;
-  double time[6];
-  double total;
+  // double t1;
+  // double t2;
+  // double time[6];
+  // double total;
   double *x;
 
   // int arg = argc > 1 ? argv[1][0] - '0' : 3;
@@ -120,34 +118,34 @@ long long linpack() {
       b[i] = b[i] + a[i+j*LDA] * x[j];
     }
   }
-  t1 = cpu_time ( );
+  // t1 = cpu_time ( );
 
   info = dgefa ( a, LDA, N, ipvt );
 
   if ( info != 0 )
   {
-    _clui();
-    printf ( "\n" );
-    printf ( "LINPACK_BENCH - Fatal error!\n" );
-    printf ( "  The matrix A is apparently singular.\n" );
-    printf ( "  Abnormal end of execution.\n" );
-    _stui();
+    // _clui();
+    // printf ( "\n" );
+    // printf ( "LINPACK_BENCH - Fatal error!\n" );
+    // printf ( "  The matrix A is apparently singular.\n" );
+    // printf ( "  Abnormal end of execution.\n" );
+    // _stui();
     exit(-1);
     return 1;
   }
   
-  t2 = cpu_time ( );
-  time[0] = t2 - t1;
+  // t2 = cpu_time ( );
+  // time[0] = t2 - t1;
 
-  t1 = cpu_time ( );
+  // t1 = cpu_time ( );
 
   job = 0;
   dgesl ( a, LDA, N, ipvt, b, job );
 
-  t2 = cpu_time ( );
-  time[1] = t2 - t1;
+  // t2 = cpu_time ( );
+  // time[1] = t2 - t1;
 
-  total = time[0] + time[1];
+  // total = time[0] + time[1];
  
   free ( a );
 
@@ -195,17 +193,17 @@ long long linpack() {
 
   residn = resid_max / ( double ) N / a_max / b_max / eps;
 
-  time[2] = total;
-  if ( 0.0 < total )
-  {
-    time[3] = ops / ( 1.0E+06 * total );
-  }
-  else
-  {
-    time[3] = -1.0;
-  }
-  time[4] = 2.0 / time[3];
-  time[5] = total / cray;
+  // time[2] = total;
+  // if ( 0.0 < total )
+  // {
+  //   time[3] = ops / ( 1.0E+06 * total );
+  // }
+  // else
+  // {
+  //   time[3] = -1.0;
+  // }
+  // time[4] = 2.0 / time[3];
+  // time[5] = total / cray;
 
   // _clui();
   // printf ( "\n" );
@@ -238,8 +236,10 @@ long long linpack() {
   // printf ( "\n" );
   // timestamp ( );
 
+  // printf("%lld\n", (long long)residn);
+  // printf("CNT: %lld\n", CNT);
+
   return (long long)residn;
-  // return 0;
 # undef LDA
 # undef N
 }
@@ -278,10 +278,10 @@ double cpu_time ( void )
 {
   double value;
 	
-  _clui();
+  // _clui();
   value = ( double ) clock ( ) 
         / ( double ) CLOCKS_PER_SEC;
-  _stui();
+  // _stui();
 
   return value;
 }
@@ -373,7 +373,6 @@ void daxpy ( int n, double da, double dx[], int incx, double dy[], int incy )
     {
       iy = ( - n + 1 ) * incy;
     }
-
     for ( i = 0; i < n; i++ )
     {
       dy[iy] = dy[iy] + da * dx[ix];
@@ -386,19 +385,12 @@ void daxpy ( int n, double da, double dx[], int incx, double dy[], int incy )
 */
   else
   {
-    m = n % 4;
-
-    for ( i = 0; i < m; i++ )
+#ifdef UNROLL
+  #pragma clang loop unroll_count(32)
+#endif
+    for ( i = 0; i < n; i++) // 50 LLVM IR Instructions for 8 iterations.
     {
       dy[i] = dy[i] + da * dx[i];
-    }
-
-    for ( i = m; i < n; i = i + 4 )
-    {
-      dy[i  ] = dy[i  ] + da * dx[i  ];
-      dy[i+1] = dy[i+1] + da * dx[i+1];
-      dy[i+2] = dy[i+2] + da * dx[i+2];
-      dy[i+3] = dy[i+3] + da * dx[i+3];
     }
   }
   return;
@@ -502,20 +494,12 @@ double ddot ( int n, double dx[], int incx, double dy[], int incy )
 */
   else
   {
-    m = n % 5;
-
-    for ( i = 0; i < m; i++ )
+#ifdef UNROLL
+    #pragma clang loop unroll_count(32)
+#endif
+    for ( i = 0; i < n; i++ )
     {
       dtemp = dtemp + dx[i] * dy[i];
-    }
-
-    for ( i = m; i < n; i = i + 5 )
-    {
-      dtemp = dtemp + dx[i  ] * dy[i  ] 
-                    + dx[i+1] * dy[i+1] 
-                    + dx[i+2] * dy[i+2] 
-                    + dx[i+3] * dy[i+3] 
-                    + dx[i+4] * dy[i+4];
     }
   }
   return dtemp;
@@ -799,20 +783,9 @@ void dscal ( int n, double sa, double x[], int incx )
   }
   else if ( incx == 1 )
   {
-    m = n % 5;
-
-    for ( i = 0; i < m; i++ )
-    {
-      x[i] = sa * x[i];
-    }
-
-    for ( i = m; i < n; i = i + 5 )
+    for ( i = 0; i < n; i++ )
     {
       x[i]   = sa * x[i];
-      x[i+1] = sa * x[i+1];
-      x[i+2] = sa * x[i+2];
-      x[i+3] = sa * x[i+3];
-      x[i+4] = sa * x[i+4];
     }
   }
   else

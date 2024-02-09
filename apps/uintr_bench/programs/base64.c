@@ -142,7 +142,7 @@ long long base64() {
     default: printf("error: %d\\n", arg); return -1;
   }
 
-  init_decode_table();
+  // init_decode_table();
 
   const int STR_SIZE = 10000000;
   

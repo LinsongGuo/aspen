@@ -21,10 +21,10 @@ namespace {
 
 typedef long long (*bench_type)(void);
 
-const int BENCH_NUM = 9;
+const int BENCH_NUM = 12;
 std::string worker_spec;
-std::string bench_name[BENCH_NUM] = {"mcf", "linpack", "base64", "matmul", "matmul_int", "sum", "array", "cmp", "malloctest"};
-bench_type bench_ptr[BENCH_NUM] = {mcf, linpack, base64, matmul, matmul_int, sum, array, cmp, malloctest};
+std::string bench_name[BENCH_NUM] = {"mcf", "linpack", "base64", "matmul", "matmul_int", "sum", "array", "cmp", "malloctest", "cache_unfriendly", "cache_friendly", "cache_stripe"};
+bench_type bench_ptr[BENCH_NUM] = {mcf, linpack, base64, matmul, matmul_int, sum, array, cmp, malloctest, cache_unfriendly, cache_friendly, cache_stripe};
 std::vector<std::string> task_name;
 std::vector<bench_type> task_ptr;
 long long task_result[128];

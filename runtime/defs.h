@@ -181,7 +181,7 @@ struct thread_tf {
 	uint64_t zmm31[4] __attribute__((aligned(64)));
 	
 #elif defined(UNSAFE_PREEMPT_SIMDREG)
-	#ifndef CONCORD_PREEMPT
+	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY)
 	/* Mask registers */
 	// uint64_t k0; ko is a hardcoded constant 
 	uint64_t k1;
@@ -255,6 +255,10 @@ struct thread {
 	uint64_t		run_start_tsc;
 	uint64_t		ready_tsc;
 	uint64_t		tlsvar;
+#ifdef PREEMPTED_RQ
+	bool            preempted;
+#endif
+
 #ifdef GC
 	struct list_node	gc_link;
 	unsigned int		onk;
@@ -546,10 +550,21 @@ struct kthread {
 	unsigned int		rcu_gen;
 	unsigned int		curr_cpu;
 #ifdef GC
+	#ifdef PREEMPTED_RQ
+	uint32_t            preempted_rq_head;
+	uint32_t  	        preempted_rq_tail;
+	#else
 	uint64_t		local_gc_gen;
+	#endif
 	unsigned long		pad1[1];
 #else
+	#ifdef PREEMPTED_RQ
+	uint32_t            preempted_rq_head;
+	uint32_t  	        preempted_rq_tail;
+	unsigned long		pad1[1];
+	#else
 	unsigned long		pad1[2];
+	#endif
 #endif
 
 	/* 3rd cache-line */
@@ -558,6 +573,9 @@ struct kthread {
 
 	/* 4th-7th cache-line */
 	thread_t		*rq[RUNTIME_RQ_SIZE];
+#ifdef PREEMPTED_RQ
+	thread_t        *preempted_rq[RUNTIME_RQ_SIZE];
+#endif 
 
 	/* 8th cache-line */
 	spinlock_t		timer_lock;

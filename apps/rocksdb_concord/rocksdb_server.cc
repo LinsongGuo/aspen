@@ -4,6 +4,7 @@ extern "C" {
 #include <runtime/runtime.h>
 #include <runtime/udp.h>
 #include <runtime/uintr.h>
+#include <runtime/thread.h>
 // #include <runtime/concord.h>
 #include "concord-rocksdb.h"
 }
@@ -189,6 +190,8 @@ static void HandleLoop(udpconn_t *c) {
     ret = udp_write_to(c, &rp, sizeof(Payload), &addr);
     assert(ret == sizeof(Payload));
     // printf("write ret = %ld\n", ret);
+
+    // thread_new_task();
 	}
 }
 
@@ -383,7 +386,8 @@ void MainHandler_simple(void *arg) {
 }
 
 
-void wramup() {
+void warmup() {
+  printf("warmup starts\n");
   const int task_num = 24;
   rt::WaitGroup wg(24);
   long long start = now();
@@ -398,7 +402,7 @@ void wramup() {
   wg.Wait();
   barrier();
   long long end = now();
-  printf("Wramup Ends: %.3f\n", 1.*(end - start) / 1e9);
+  printf("warmup Ends: %.3f\n", 1.*(end - start) / 1e9);
 }
 
 void MainHandler_simple2(void *arg) {
@@ -463,9 +467,9 @@ void MainHandler_udpconn(void *arg) {
   rt::UintrTimerStart();
   // _stui();
   
-  wramup();
+  warmup();
 
-  for (int port = 0; port < 4; ++port) {
+  for (int port = 0; port < 12; ++port) {
     udpconn_t *c;
     ssize_t ret;
     listen_addr.port = 5000 + port;
@@ -536,9 +540,9 @@ int main(int argc, char *argv[]) {
 
   // bool flag = 1;
   // ret = runtime_init(argv[1], MainHandler_scan, (void*) &flag);
-  // ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
+  ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
   // ret = runtime_init(argv[1], MainHandler, NULL);
-  ret = runtime_init(argv[1], MainHandler_simple2, NULL);
+  // ret = runtime_init(argv[1], MainHandler_simple2, NULL);
   if (ret) {
     std::cerr << "failed to start runtime" << std::endl;
     return ret;

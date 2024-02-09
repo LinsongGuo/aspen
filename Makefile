@@ -35,8 +35,11 @@ else
 #		runtime_asm = runtime/switch_simdreg.S
 	else
 		ifeq ($(CONFIG_UNSAFE_PREEMPT),simdreg)
-			runtime_asm = runtime/switch_simdreg.S
-#			runtime_asm = runtime/switch.S
+			ifeq ($(CONFIG_GPR_ONLY),y)
+				runtime_asm = runtime/switch.S
+			else
+				runtime_asm = runtime/switch_simdreg.S
+			endif
 		else 
 			ifeq ($(CONFIG_UNSAFE_PREEMPT),simdreg_custom)
 				runtime_asm = runtime/switch_simdreg_custom.S

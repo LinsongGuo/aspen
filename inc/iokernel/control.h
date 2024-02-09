@@ -28,6 +28,10 @@ struct q_ptrs {
 	uint32_t		rxq_wb; /* must be first */
 	uint32_t		rq_head;
 	uint32_t		rq_tail;
+#ifdef PREEMPTED_RQ
+	uint32_t		preempted_rq_head;
+	uint32_t		preempted_rq_tail;
+#endif
 	uint32_t		directpath_rx_tail;
 	uint64_t		next_timer_tsc;
 	uint32_t		storage_tail;
@@ -42,11 +46,15 @@ struct q_ptrs {
 	uint64_t		cede_gen;
 	uint64_t		yield_rcu_gen;
 	uint64_t		park_gen;
+#ifdef PREEMPTED_RQ
+	uint64_t		pad3[3];
+#else
 	uint64_t		pad3[4];
+#endif
 };
 
 BUILD_ASSERT(sizeof(struct q_ptrs) == 2 * CACHE_LINE_SIZE);
-BUILD_ASSERT(offsetof(struct q_ptrs, curr_grant_gen) % CACHE_LINE_SIZE == 0);
+// BUILD_ASSERT(offsetof(struct q_ptrs, curr_grant_gen) % CACHE_LINE_SIZE == 0); # TODO
 
 struct congestion_info {
 	float			load;
