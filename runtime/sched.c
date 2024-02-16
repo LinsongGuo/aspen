@@ -956,8 +956,9 @@ void thread_yield(void)
 void thread_new_task(void)
 {
 	thread_t *curth = thread_self();
-
+#ifdef PREEMPTED_RQ
 	curth->preempted = false;
+#endif
 }
 
 #ifdef PREEMPTED_RQ
