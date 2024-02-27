@@ -188,6 +188,8 @@ void uintr_timer_upd(int kidx) {
 }
 
 void* uintr_timer(void*) {
+    _clui();
+    
     base_init_thread();
 
     set_thread_affinity(55);
@@ -331,7 +333,6 @@ void* signal_timer3(void*) {
 void uintr_timer_start() {
 	uintr_timer_flag = 1;
     start = now();
-    _stui();
 }
 
 void uintr_timer_end() {

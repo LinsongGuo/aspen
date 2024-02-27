@@ -804,6 +804,10 @@ void thread_ready_head_locked(thread_t *th)
  */
 void thread_ready(thread_t *th)
 {
+#ifdef PREEMPTED_RQ
+	th->preempted = false;
+#endif
+
 	struct kthread *k;
 	uint32_t rq_tail;
 
@@ -873,6 +877,8 @@ void thread_preempt_ready(thread_t *th)
 
 	spin_lock(&k->lock);
 
+	BUG_ON(k->preempted_rq_head - k->preempted_rq_tail >= RUNTIME_RQ_SIZE);
+	
 	if (!th->preempted) {
 		k->preempted_rq[k->preempted_rq_head++ % RUNTIME_RQ_SIZE] = th;
 		th->preempted = true;
@@ -880,6 +886,8 @@ void thread_preempt_ready(thread_t *th)
 	else {
 		k->preempted_rq[--k->preempted_rq_tail % RUNTIME_RQ_SIZE] = th;
 	}
+
+	// log_info("head: %u, tail: %u", k->preempted_rq_head, k->preempted_rq_tail);
 
 	ACCESS_ONCE(k->q_ptrs->preempted_rq_head)++;
 	

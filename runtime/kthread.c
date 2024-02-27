@@ -296,7 +296,7 @@ void kthread_wait_to_attach(void)
 		s = ioctl(ksched_fd, KSCHED_IOC_START, 0);
 	} while (s < 0);
 
-	log_info("get core for kth-%d", myk()->kthread_idx);
+	// log_info("get core for kth-%d", myk()->kthread_idx);
 	k->curr_cpu = s;
 	store_release(&cpu_map[s].recent_kthread, k);
 
