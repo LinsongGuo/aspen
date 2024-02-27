@@ -467,7 +467,7 @@ void MainHandler_udpconn(void *arg) {
   rt::UintrTimerStart();
   // _stui();
   
-  warmup();
+ // warmup();
 
   for (int port = 0; port < 12; ++port) {
     udpconn_t *c;

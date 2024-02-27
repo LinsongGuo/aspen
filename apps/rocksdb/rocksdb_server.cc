@@ -660,8 +660,6 @@ void MainHandler_udpconn(void *arg) {
   rocksdb_init();
   PutInit();
 
-  printf("PutInit\n");
-
   unsigned int i = 0;
 
   uint64_t durations[1000];
@@ -720,7 +718,7 @@ void MainHandler_udpconn(void *arg) {
 	// 	return;
 	// }
 
-  for (int port = 0; port < 1; ++port) {
+  for (int port = 0; port < 24; ++port) {
     udpconn_t *c;
     ssize_t ret;
     listen_addr.port = 5000 + port;
@@ -731,7 +729,6 @@ void MainHandler_udpconn(void *arg) {
     }
     
     for (int i = 0; i < 32; ++i) {
-      printf("for %d\n", i);
       rt::Spawn([&, c]() {
         HandleLoop(c);
       });
@@ -788,8 +785,8 @@ int main(int argc, char *argv[]) {
 
   // bool flag = 1;
   // ret = runtime_init(argv[1], MainHandler_scan, (void*) &flag);
-  // ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
-  ret = runtime_init(argv[1], MainHandler, NULL);
+  ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
+  // ret = runtime_init(argv[1], MainHandler, NULL);
   // ret = runtime_init(argv[1], MainHandler_simple2, NULL);
   if (ret) {
     std::cerr << "failed to start runtime" << std::endl;
