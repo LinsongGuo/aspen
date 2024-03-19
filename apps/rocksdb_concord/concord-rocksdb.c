@@ -24,3 +24,18 @@ inline void DoScan(rocksdb_t *db, rocksdb_readoptions_t *readoptions) {
   } 
   rocksdb_iter_destroy(iter);
 }
+
+
+inline void DoRangeScan(rocksdb_t *db, rocksdb_readoptions_t *readoptions, char* key, int key_len) {
+  const char *retr_key;
+  size_t klen;
+  rocksdb_iterator_t *iter = rocksdb_create_iterator(db, readoptions);
+  rocksdb_iter_seek(iter, key, key_len); 
+  int i = 0;
+  for (i = 0; i < 5000; ++i) {
+    retr_key = rocksdb_iter_key(iter, &klen);
+    rocksdb_iter_next(iter);
+    // printf("for %d: %s\n", i, retr_key);
+  } 
+  rocksdb_iter_destroy(iter);
+}

@@ -241,20 +241,26 @@ void MainHandler(void *arg) {
   // PrintResult("UncontendedMutex",
   //   std::chrono::duration_cast<us>(finish - start));
 
+  auto start = std::chrono::steady_clock::now();
+  BenchYield();
+  auto finish = std::chrono::steady_clock::now();
+  PrintResult("Yield",
+  std::chrono::duration_cast<us>(finish - start));
+
   // auto start = std::chrono::steady_clock::now();
   // BenchYield(2);
   // auto finish = std::chrono::steady_clock::now();
   // PrintResult("Yield",
   // std::chrono::duration_cast<us>(finish - start));
 
-  int nth = *((int*)arg);
-  printf("nth: %d\n", nth);
-  auto start = std::chrono::steady_clock::now();
-  unsigned sum = BenchYield_work(nth);
-  auto finish = std::chrono::steady_clock::now();
-  PrintResult("BenchYield_work",
-  std::chrono::duration_cast<us>(finish - start));
-  printf("sum: %u\n", sum);
+  // int nth = *((int*)arg);
+  // printf("nth: %d\n", nth);
+  // auto start = std::chrono::steady_clock::now();
+  // unsigned sum = BenchYield_work(nth);
+  // auto finish = std::chrono::steady_clock::now();
+  // PrintResult("BenchYield_work",
+  // std::chrono::duration_cast<us>(finish - start));
+  // printf("sum: %u\n", sum);
   
   // auto start = std::chrono::steady_clock::now();
   // unsigned sum = BenchMalloc();

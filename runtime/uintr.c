@@ -372,7 +372,8 @@ int uintr_init_late(void) {
 }
 
 void uintr_timer_summary(void) {
-	printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+	// printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+    fprintf(stderr, "Execution: %.9f\n", 1.*(end - start) / 1e9);
 
     long long uintr_sent_total = 0, uintr_recv_total = 0;
     int i;
@@ -380,6 +381,9 @@ void uintr_timer_summary(void) {
         uintr_sent_total += uintr_sent[i];
         uintr_recv_total += uintr_recv[i];
     }
-    printf("Preemption_sent: %lld\n", uintr_sent_total);
-    printf("Preemption_received: %lld\n", uintr_recv_total);	
+    // printf("Preemption_sent: %lld\n", uintr_sent_total);
+    // printf("Preemption_received: %lld\n", uintr_recv_total);
+
+    fprintf(stderr, "Preemption_sent: %lld\n", uintr_sent_total);
+    fprintf(stderr, "Preemption_received: %lld\n", uintr_recv_total);
 }
