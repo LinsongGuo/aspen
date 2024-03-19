@@ -345,9 +345,8 @@ int uintr_init(void) {
     memset(uintr_sent, 0, sizeof(uintr_sent));
     memset(uintr_recv, 0, sizeof(uintr_recv));
 
-    TIMESLICE = atoi(getenv("TIMESLICE")) * 1000L;
-    // TIMESLICE = 5 * 1000L;
-	log_info("TIMESLICE: %lld us", TIMESLICE / 1000);
+    TIMESLICE = uthread_quantum_us * 1000;
+	log_info("quantum: %lld us", TIMESLICE / 1000);
     return 0;
 }
 
@@ -407,7 +406,8 @@ int uintr_init_late(void) {
 }
 
 void uintr_timer_summary(void) {
-	printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+	// printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+    fprintf(stderr, "Execution: %.9f\n", 1.*(end - start) / 1e9);
 
     long long uintr_sent_total = 0, uintr_recv_total = 0;
     int i;
@@ -415,6 +415,9 @@ void uintr_timer_summary(void) {
         uintr_sent_total += uintr_sent[i];
         uintr_recv_total += uintr_recv[i];
     }
-    printf("Preemption_sent: %lld\n", uintr_sent_total);
-    printf("Preemption_received: %lld\n", uintr_recv_total);	
+    // printf("Preemption_sent: %lld\n", uintr_sent_total);
+    // printf("Preemption_received: %lld\n", uintr_recv_total);
+
+    fprintf(stderr, "Preemption_sent: %lld\n", uintr_sent_total);
+    fprintf(stderr, "Preemption_received: %lld\n", uintr_recv_total);
 }

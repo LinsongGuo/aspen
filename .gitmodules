@@ -13,3 +13,9 @@
 [submodule "deps/pcm"]
 	path = deps/pcm
 	url = https://github.com/opcm/pcm.git
+[submodule "apps/rocksdb/rocksdb"]
+	path = apps/rocksdb/rocksdb
+	url = https://github.com/LinsongGuo/rocksdb.git
+[submodule "apps/rocksdb_concord/rocksdb"]
+	path = apps/rocksdb_concord/rocksdb
+	url = https://github.com/LinsongGuo/rocksdb.git

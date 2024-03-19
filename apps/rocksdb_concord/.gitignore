@@ -3,7 +3,6 @@ rocksdb_server
 rocksdb_server_concord
 rocksdb_server_concord_f
 rocksdb_server_concord_fl
-rocksdb
 rocksdb_pic
 rocksdb_nopt
 rocksdb_avx_pic

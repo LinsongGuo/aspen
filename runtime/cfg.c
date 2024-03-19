@@ -64,6 +64,17 @@ static int str_to_long(const char *str, long *val)
 	return 0;
 }
 
+static int str_to_longlong(const char *str, long long *val)
+{
+	char *endptr;
+
+	*val = strtoll(str, &endptr, 10);
+	if (endptr == str || (*endptr != '\0' && *endptr != '\n') ||
+	    ((*val == LONG_MIN || *val == LONG_MAX) && errno == ERANGE))
+		return -EINVAL;
+	return 0;
+}
+
 static int parse_host_ip(const char *name, const char *val)
 {
 	uint32_t *addr;
@@ -153,6 +164,25 @@ static int parse_runtime_guaranteed_kthreads(const char *name, const char *val)
 	}
 
 	guaranteedks = tmp;
+	return 0;
+}
+
+
+static int parse_runtime_uthread_quantum_us(const char *name, const char *val)
+{
+	long long tmp;
+	int ret;
+
+	ret = str_to_longlong(val, &tmp);
+	if (ret)
+		return ret;
+
+	if (tmp < 0 || tmp > 100000000) {
+		log_err("invalid preempt quantum, '%lld'", tmp);
+		return -EINVAL;
+	}
+
+	uthread_quantum_us = tmp;
 	return 0;
 }
 
@@ -382,6 +412,7 @@ static const struct cfg_handler cfg_handlers[] = {
 	{ "runtime_spinning_kthreads", parse_runtime_spinning_kthreads, false },
 	{ "runtime_guaranteed_kthreads", parse_runtime_guaranteed_kthreads,
 			false },
+	{ "runtime_uthread_quantum_us", parse_runtime_uthread_quantum_us, false},
 	{ "runtime_priority", parse_runtime_priority, false },
 	{ "runtime_ht_punish_us", parse_runtime_ht_punish_us, false },
 	{ "runtime_qdelay_us", parse_runtime_qdelay_us, false },

@@ -661,6 +661,7 @@ DECLARE_SPINLOCK(klock);
 extern unsigned int spinks;
 extern unsigned int maxks;
 extern unsigned int guaranteedks;
+extern long long uthread_quantum_us;
 extern struct kthread *ks[NCPU];
 extern bool cfg_prio_is_lc;
 extern unsigned int cfg_request_hardware_queues;

@@ -7,7 +7,7 @@ make -j
 popd
 sudo ./scripts/setup_machine.sh 
 
-pushd binding/cc
+pushd bindings/cc
 make clean
 make -j
 popd
