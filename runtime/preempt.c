@@ -5,6 +5,12 @@
 #include <signal.h>
 #include <string.h>
 
+#ifdef USE_XSAVE
+#include <immintrin.h>
+#include <sys/syscall.h>
+#include <asm/prctl.h>
+#endif
+
 #include "base/log.h"
 #include "runtime/thread.h"
 #include "runtime/preempt.h"
@@ -14,6 +20,13 @@
 /* the current preemption count */
 DEFINE_PERTHREAD(unsigned int, preempt_cnt);
 DEFINE_PERTHREAD(unsigned int, upreempt_cnt);
+
+#ifdef USE_XSAVE
+/* maximum size in bytes needed for xsave */
+size_t xsave_max_size;
+/* extended processor features to save */
+size_t xsave_features;
+#endif
 
 /* set a flag to indicate a preemption request is pending */
 static void set_preempt_needed(void)
@@ -125,6 +138,21 @@ int preempt_init(void)
 		log_err("couldn't register signal handler");
 		return -errno;
 	}
+
+#ifdef USE_XSAVE
+	// borrowed from Caladan:
+	int ret = syscall(SYS_arch_prctl, ARCH_GET_XCOMP_SUPP, &xsave_features);
+	if (unlikely(ret)) {
+		log_err("failed to get XSAVE features");
+		return -1;
+	}
+
+	struct cpuid_info regs;
+	cpuid2(0xd, 0, &regs);
+	xsave_max_size = regs.ecx;
+	// xsave_max_size = 8192;
+	log_info("xsave_max_size: %ld", xsave_max_size);
+#endif
 
 	return 0;
 }

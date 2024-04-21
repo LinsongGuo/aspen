@@ -84,7 +84,7 @@ bool mlx5_rx_poll(unsigned int q_index)
 	if (!__sync_bool_compare_and_swap(&v->poll_th, th, NULL))
 		return false;
 
-#ifdef SMART_PREEMPT
+#if !defined(PREEMPTED_RQ) && defined(SMART_PREEMPT)
 	thread_ready_head(th);
 #else 
 	thread_ready(th);
@@ -103,8 +103,11 @@ bool mlx5_rx_poll_locked(unsigned int q_index)
 	if (!__sync_bool_compare_and_swap(&v->poll_th, th, NULL))
 		return false;
 
-	// thread_ready_locked(th);
+#if !defined(PREEMPTED_RQ) && defined(SMART_PREEMPT)
 	thread_ready_head_locked(th);
+#else
+	thread_ready_locked(th);
+#endif
 	return true;
 }
 

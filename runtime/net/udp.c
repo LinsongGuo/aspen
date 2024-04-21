@@ -601,7 +601,8 @@ static void udp_par_recv(struct trans_entry *e, struct mbuf *m)
 	d->raddr.ip = ntoh32(iphdr->saddr);
 	d->raddr.port = ntoh16(udphdr->src_port);
 	d->release_data = m;
-#ifdef SMART_PREEMPT
+
+#if !defined(PREEMPTED_RQ) && defined(SMART_PREEMPT)
 	thread_ready_head(th);
 #else 
 	thread_ready(th);

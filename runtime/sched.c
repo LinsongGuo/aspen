@@ -88,10 +88,10 @@ static __noreturn void jmp_thread(thread_t *th)
 			cpu_relax();
 	}
 	th->thread_running = true;
-#ifdef SMART_PREEMPT
-	uintr_timer_upd(myk()->kthread_idx);
-	barrier();
-#endif
+// #ifdef SMART_PREEMPT
+// 	uintr_timer_upd(myk()->kthread_idx);
+// 	barrier();
+// #endif
 	__jmp_thread(&th->tf);
 }
 
@@ -164,6 +164,23 @@ static void drain_overflow(struct kthread *l)
 		l->rq[l->rq_head++ % RUNTIME_RQ_SIZE] = th;
 	}
 }
+
+#ifdef PREEMPTED_RQ
+static void drain_preempted_overflow(struct kthread *l)
+{
+	thread_t *th;
+
+	assert_spin_lock_held(&l->lock);
+	assert(myk() == l || l->parked);
+
+	while (l->preempted_rq_head - l->preempted_rq_tail < RUNTIME_RQ_SIZE) {
+		th = list_pop(&l->preempted_rq_overflow, thread_t, link);
+		if (!th)
+			break;
+		l->preempted_rq[l->preempted_rq_head++ % RUNTIME_RQ_SIZE] = th;
+	}
+}
+#endif
 
 static bool work_available(struct kthread *k, uint64_t now_tsc)
 {
@@ -280,9 +297,14 @@ static uint32_t drain_preempted_threads(struct kthread *k, struct list_head *l, 
 
 	for (i = 0; i < nr; i++) {
 		// printf("steal tail head: %u %u\n", preempted_rq_tail, preempted_rq_head);
-		BUG_ON(!wraps_lt(preempted_rq_tail, preempted_rq_head));
-		th = k->preempted_rq[preempted_rq_tail++ % RUNTIME_RQ_SIZE];
-		// printf("steal th: %x %x\n", th, &th->link);
+		if (likely(wraps_lt(preempted_rq_tail, preempted_rq_head))) {
+			th = k->preempted_rq[preempted_rq_tail++ % RUNTIME_RQ_SIZE];
+			// printf("steal th: %x %x\n", th, &th->link);
+		} else {
+			th = list_pop(&k->preempted_rq_overflow, thread_t, link);
+			if (!th)
+				break;
+		}
 		list_add_tail(l, &th->link);
 	}
 
@@ -331,8 +353,10 @@ static void merge_preempted_runqueues(struct kthread *l, uint32_t lsize, struct 
 		}
 
 		assert(th);
-		BUG_ON(l->preempted_rq_head - l->preempted_rq_tail >= RUNTIME_RQ_SIZE);
-		l->preempted_rq[l->preempted_rq_head++ % RUNTIME_RQ_SIZE] = th;
+		if (unlikely(l->preempted_rq_head - l->preempted_rq_tail >= RUNTIME_RQ_SIZE))
+			list_add_tail(&l->preempted_rq_overflow, &th->link);
+		else
+			l->preempted_rq[l->preempted_rq_head++ % RUNTIME_RQ_SIZE] = th;
 	}
 
 	ACCESS_ONCE(l->q_ptrs->preempted_rq_head) += rsize;
@@ -360,6 +384,7 @@ static bool steal_work(struct kthread *l, struct kthread *r)
 		}
 		gc_kthread_report(r);
 		drain_overflow(r);
+		drain_preempted_overflow(r);
 	}
 #endif
 
@@ -427,6 +452,10 @@ static __noreturn __noinline void schedule(void)
 	assert_spin_lock_held(&l->lock);
 	assert(l->parked == false);
 
+#ifdef PREEMPTED_RQ
+	ACCESS_ONCE(l->is_preempted) = -1; // no user thread is running now.
+#endif
+
 	/* detect misuse of preempt disable */
 	// if ((perthread_read(preempt_cnt) & ~PREEMPT_NOT_PENDING) != 1) {
 	// 	printf("misuse:  %d %x\n", perthread_read(preempt_cnt), perthread_read(preempt_cnt));
@@ -478,13 +507,15 @@ static __noreturn __noinline void schedule(void)
 	if (unlikely(!list_empty(&l->rq_overflow)))
 		drain_overflow(l);
 
-#ifdef PREEMPTED_RQ
-	if (l->rq_head != l->rq_tail || l->preempted_rq_head != l->preempted_rq_tail) {
-		goto done;
-	}
-#else
 	/* first try the local runqueue */
 	if (l->rq_head != l->rq_tail)
+		goto done;
+
+#ifdef PREEMPTED_RQ
+	if (unlikely(!list_empty(&l->preempted_rq_overflow)))
+		drain_preempted_overflow(l);
+
+	if (l->preempted_rq_head != l->preempted_rq_tail)
 		goto done;
 #endif
 
@@ -559,18 +590,23 @@ done:
 	if (unlikely(!list_empty(&l->rq_overflow)))
 		drain_overflow(l);
 
-	update_oldest_tsc(l);
-	// printf("Find1: %d\n", l->kthread_idx);
 #ifdef PREEMPTED_RQ
+	ACCESS_ONCE(l->is_preempted) = 0;
 	}
 	else {
-		BUG_ON(l->preempted_rq_head == l->preempted_rq_tail);
+		assert(l->preempted_rq_head != l->preempted_rq_tail);
 		th = l->preempted_rq[l->preempted_rq_tail++ % RUNTIME_RQ_SIZE];
 		ACCESS_ONCE(l->q_ptrs->preempted_rq_tail)++;
 		// printf("Find2: %d\n", l->kthread_idx);
+
+		if (unlikely(!list_empty(&l->preempted_rq_overflow)))
+			drain_preempted_overflow(l);
+		
+		ACCESS_ONCE(l->is_preempted) = 1;
 	}
 #endif
 
+	update_oldest_tsc(l);
 	spin_unlock(&l->lock);
 
 	/* update exit stat counters */
@@ -590,6 +626,8 @@ done:
 	ACCESS_ONCE(l->q_ptrs->rcu_gen) = l->rcu_gen;
 	assert((l->rcu_gen & 0x1) == 0x1);
 
+	ACCESS_ONCE(l->uthread_start_ts) = rdtsc();
+	
 	/* and jump into the next thread */
 	jmp_thread(th);
 }
@@ -637,23 +675,28 @@ static __always_inline void enter_schedule(thread_t *curth)
 
 	/* pop the next runnable thread from the queue */
 #ifdef PREEMPTED_RQ
-	if (k->rq_head == k->rq_tail) {
-		BUG_ON(k->preempted_rq_head == k->preempted_rq_tail);
-		th = k->preempted_rq[k->preempted_rq_tail++ % RUNTIME_RQ_SIZE];
-		ACCESS_ONCE(k->q_ptrs->preempted_rq_tail)++;
-	}
-	else {
+	if (k->rq_head != k->rq_tail) {
+#endif
 		th = k->rq[k->rq_tail++ % RUNTIME_RQ_SIZE];
 		ACCESS_ONCE(k->q_ptrs->rq_tail)++;
-	}
-#else
-	th = k->rq[k->rq_tail++ % RUNTIME_RQ_SIZE];
-	ACCESS_ONCE(k->q_ptrs->rq_tail)++;
-#endif
 
-	/* move overflow tasks into the runqueue */
-	if (unlikely(!list_empty(&k->rq_overflow)))
-		drain_overflow(k);
+		/* move overflow tasks into the runqueue */
+		if (unlikely(!list_empty(&k->rq_overflow)))
+			drain_overflow(k);
+
+#ifdef PREEMPTED_RQ
+		ACCESS_ONCE(k->is_preempted) = 0;
+	}
+	else {
+		th = k->preempted_rq[k->preempted_rq_tail++ % RUNTIME_RQ_SIZE];
+		ACCESS_ONCE(k->q_ptrs->preempted_rq_tail)++;
+
+		if (unlikely(!list_empty(&k->preempted_rq_overflow)))
+			drain_preempted_overflow(k);
+
+		ACCESS_ONCE(k->is_preempted) = 1;
+	}
+#endif
 
 	update_oldest_tsc(k);
 	spin_unlock(&k->lock);
@@ -669,6 +712,8 @@ static __always_inline void enter_schedule(thread_t *curth)
 	
 	/* check for misuse of preemption disabling */
 	BUG_ON((perthread_read(preempt_cnt) & ~PREEMPT_NOT_PENDING) != 1);
+
+	ACCESS_ONCE(k->uthread_start_ts) = rdtsc();
 
 	/* check if we're switching into the same thread as before */
 	if (unlikely(th == curth)) {
@@ -686,6 +731,7 @@ static __always_inline void enter_schedule(thread_t *curth)
 	
 	// uintr_timer_upd(myk()->kthread_idx);
 	// barrier();
+	
 	jmp_thread_direct(curth, th);
 }
 
@@ -731,6 +777,21 @@ static void thread_ready_prepare(struct kthread *k, thread_t *th)
 		STAT(REMOTE_WAKES)++;
 }
 
+#ifdef PREEMPTED_RQ
+static void thread_preempt_ready_prepare(struct kthread *k, thread_t *th)
+{
+	/* check for misuse where a ready thread is marked ready again */
+	BUG_ON(th->thread_ready);
+
+	/* prepare thread to be runnable */
+	th->thread_ready = true;
+	// th->ready_tsc = rdtsc();
+	if (cores_have_affinity(th->last_cpu, k->curr_cpu))
+		STAT(LOCAL_WAKES)++;
+	else
+		STAT(REMOTE_WAKES)++;
+}
+#endif
 /**
  * thread_ready_locked - makes a uthread runnable (at tail, kthread lock held)
  * @th: the thread to mark runnable
@@ -741,6 +802,10 @@ static void thread_ready_prepare(struct kthread *k, thread_t *th)
  */
 void thread_ready_locked(thread_t *th)
 {
+#ifdef PREEMPTED_RQ
+	th->preempted = false;
+#endif
+
 	struct kthread *k = myk();
 
 	assert_preempt_disabled();
@@ -775,6 +840,10 @@ void thread_ready_locked(thread_t *th)
  */
 void thread_ready_head_locked(thread_t *th)
 {
+#ifdef PREEMPTED_RQ
+	th->preempted = false;
+#endif
+
 	struct kthread *k = myk();
 	thread_t *oldestth;
 
@@ -873,25 +942,27 @@ void thread_ready_head(thread_t *th)
 void thread_preempt_ready(thread_t *th)
 {
 	struct kthread *k = getk();
-	thread_ready_prepare(k, th);
+	thread_preempt_ready_prepare(k, th);
 
-	spin_lock(&k->lock);
-
-	BUG_ON(k->preempted_rq_head - k->preempted_rq_tail >= RUNTIME_RQ_SIZE);
-	
-	if (!th->preempted) {
-		k->preempted_rq[k->preempted_rq_head++ % RUNTIME_RQ_SIZE] = th;
-		th->preempted = true;
+	uint32_t preempted_rq_tail = load_acquire(&k->preempted_rq_tail);
+	if (unlikely(k->preempted_rq_head - preempted_rq_tail >= RUNTIME_RQ_SIZE ||
+	             !list_empty_volatile(&k->preempted_rq_overflow))) {
+		assert(k->preempted_rq_head - preempted_rq_tail <= RUNTIME_RQ_SIZE);
+		spin_lock(&k->lock);
+		list_add_tail(&k->preempted_rq_overflow, &th->link);
+		drain_preempted_overflow(k);
+		spin_unlock(&k->lock);
+		ACCESS_ONCE(k->q_ptrs->preempted_rq_head)++;
+		putk();
+		STAT(RQ_OVERFLOW)++;
+		return;
 	}
-	else {
-		k->preempted_rq[--k->preempted_rq_tail % RUNTIME_RQ_SIZE] = th;
-	}
 
-	// log_info("head: %u, tail: %u", k->preempted_rq_head, k->preempted_rq_tail);
-
+	k->preempted_rq[k->preempted_rq_head % RUNTIME_RQ_SIZE] = th;
+	store_release(&k->preempted_rq_head, k->preempted_rq_head + 1);
+	if (k->preempted_rq_head - load_acquire(&k->preempted_rq_tail) == 1)
+		ACCESS_ONCE(k->q_ptrs->oldest_tsc) = th->ready_tsc;
 	ACCESS_ONCE(k->q_ptrs->preempted_rq_head)++;
-	
-	spin_unlock(&k->lock);
 
 	putk();
 }
@@ -958,14 +1029,24 @@ void thread_yield(void)
 	preempt_disable();
 	curth->thread_ready = false;
 	thread_ready(curth);
-	enter_schedule(curth);
-}
 
-void thread_new_task(void)
-{
-	thread_t *curth = thread_self();
-#ifdef PREEMPTED_RQ
-	curth->preempted = false;
+#ifdef USE_XSAVE
+	/* allocate buffer for xsave area on stack */
+	unsigned char* xsave_buf = alloca(xsave_max_size + 64);
+	xsave_buf = (unsigned char *)align_up((uintptr_t)xsave_buf, 64);
+	/* zero xsave header */
+	__builtin_memset(xsave_buf + 512, 0, 64);
+	/* save state */
+	__builtin_ia32_xsavec64(xsave_buf, xsave_features);
+#endif
+    //uint64_t ss = rdtsc();
+    enter_schedule(curth);
+    // uint64_t ee = rdtsc();
+    // printf("%llu\n", ee - ss);
+	
+#ifdef USE_XSAVE
+	/* restore state */
+	__builtin_ia32_xrstor64(xsave_buf, xsave_features);
 #endif
 }
 
@@ -1055,7 +1136,9 @@ thread_t *thread_create(thread_fn_t fn, void *arg)
  * Returns 0 if successful, otherwise -ENOMEM if out of memory.
  */
 thread_t *thread_create_with_buf(thread_fn_t fn, void **buf, size_t buf_len)
-{
+{	
+	preempt_disable();
+	// log_info("thread_create_with_buf starts");
 	void *ptr;
 	thread_t *th = __thread_create();
 	if (unlikely(!th))
@@ -1068,6 +1151,8 @@ thread_t *thread_create_with_buf(thread_fn_t fn, void **buf, size_t buf_len)
 	th->tf.rip = (uint64_t)fn;
 	*buf = ptr;
 	gc_register_thread(th);
+	preempt_enable();
+	// log_info("thread_create_with_buf ends");
 	return th;
 }
 

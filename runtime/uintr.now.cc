@@ -36,35 +36,43 @@
 #define uintr_wait(flags)			syscall(__NR_uintr_wait, flags)
 
 #define TOKEN 0
-#define MAX_KTHREADS 48
+#define MAX_KTHREADS 32
 
 
 int uintr_fd[MAX_KTHREADS];
 int uipi_index[MAX_KTHREADS];
-long long uintr_sent[MAX_KTHREADS], uintr_recv[MAX_KTHREADS], fail[MAX_KTHREADS];
+long long uintr_sent[MAX_KTHREADS], uintr_recv[MAX_KTHREADS];
 volatile int uintr_timer_flag = 0;
 
 volatile int *cpu_preempt_points[MAX_KTHREADS];
 __thread int concord_preempt_now;
 
-uint64_t TIMESLICE = 1000000;
+long long TIMESLICE = 1000000;
 long long start, end;
 
 void concord_func() {
     // if(concord_lock_counter)
     //     return;
     concord_preempt_now = 0;
-    uintr_recv[myk()->kthread_idx]++;
-    
+    // uintr_recv[myk()->kthread_idx]++;
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
+        // uintr_recv[myk()->kthread_idx]++;
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
      	thread_yield();
+    #endif
 	}
     else {
         set_upreempt_needed();
     }
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
@@ -112,39 +120,55 @@ void __attribute__ ((interrupt))
      ui_handler(struct __uintr_frame *ui_frame,
 		unsigned long long vector) {
 		
-	++uintr_recv[vector];
-
+	++uintr_recv[vector];        
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
+        // ++uintr_recv[vector];
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
      	thread_yield();
+    #endif
 	}
     else {
         set_upreempt_needed();
     }
  
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
 void signal_handler(int signum) {
-    // ++uintr_recv[0];
-    uintr_recv[myk()->kthread_idx]++;
-
+    // uintr_recv[myk()->kthread_idx]++;
+        
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (!preempt_enabled()) {
 		set_upreempt_needed();
 		return;
 	}
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #else
-    thread_yield();
+    #ifdef PREEMPTED_RQ
+     	thread_preempt_yield();
+    #else
+     	thread_yield();
+    #endif
 #endif
 }
 
 bool pending_uthreads(int kidx) {
 #ifdef DIRECTPATH
     return ACCESS_ONCE(ks[kidx]->rq_tail) != ACCESS_ONCE(ks[kidx]->rq_head);
+    //|| ACCESS_ONCE(ks[kidx]->preempted_rq_tail) != ACCESS_ONCE(ks[kidx]->preempted_rq_head);
 #else
     return true;
 #endif
@@ -158,28 +182,14 @@ bool pending_cqe(int kidx) {
 #endif
 }
 
-volatile uint64_t last[MAX_KTHREADS];
+volatile long long last[MAX_KTHREADS];
 void uintr_timer_upd(int kidx) {
-    ACCESS_ONCE(last[kidx]) = rdtsc();
-}
-
-#ifdef SIGNAL_PREEMPT
-void sleep_spin(uint64_t cycles) {
-	uint64_t c1 = rdtsc(), c2 = c1;
-	while (c2 - c1 <= cycles) {
-		c2 = rdtsc();
-	}
-}
-#endif
-
-void compute(unsigned long long cycles) {
-	unsigned long long c1 = __rdtsc(), c2 = c1;
-	while (c2 - c1 <= cycles) {
-		c2 = __rdtsc();
-	}
+    ACCESS_ONCE(last[kidx]) = now();
 }
 
 void* uintr_timer(void*) {
+    _clui();
+    
     base_init_thread();
 
     set_thread_affinity(55);
@@ -208,22 +218,10 @@ void* uintr_timer(void*) {
 #else 
     for (i = 0; i < maxks; ++i) {
 #endif 
-        ACCESS_ONCE(last[i]) = rdtsc();
-        // compute(5000);
+        ACCESS_ONCE(last[i]) = now();
     }
 
-    long long log_time = rdtsc();
-
     while (uintr_timer_flag != -1) { 
-        if (!uintr_timer_flag) {
-            for (i = 0; i < maxks; ++i) {
-                ACCESS_ONCE(last[i]) = rdtsc();
-                // compute(5000);
-            }
-            continue;
-        }   
-
-        current = rdtsc();
 #ifdef SIGNAL_PREEMPT
         // for (i = 0; i < (maxks >> 1); ++i) {
         // for (i = 0; i < maxks/3; ++i) {
@@ -231,93 +229,32 @@ void* uintr_timer(void*) {
 #else 
         for (i = 0; i < maxks; ++i) {
 #endif
+            current = now();
+            if (!uintr_timer_flag) {
+                ACCESS_ONCE(last[i]) = current;
+                continue;
+            }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
-                // if (pending_uthreads(i) || pending_cqe(i)) {
-                    // printf("kill %d: %lld\n", i, current);
+                #ifdef SMART_PREEMPT
+                if (pending_uthreads(i) || pending_cqe(i)) {
+                #endif
+                    // printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
+                    // printf("preempt: %d %d %d\n", i, ks[i]->rq_head - ks[i]->rq_tail, ks[i]->preempted_rq_head - ks[i]->preempted_rq_tail);
+                    // printf("preempt: %d %d\n", i, ks[i]->rq_head - ks[i]->rq_tail);
 #ifdef UINTR_PREEMPT
                     _senduipi(uipi_index[i]);
 #elif defined(CONCORD_PREEMPT)
                     *(cpu_preempt_points[i]) = 1;
 #elif defined(SIGNAL_PREEMPT)
-                    // printf("kill %d (%lld): %lld | %lld, %lld\n", i, current, current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
-                    // long long s_ = now();
-                    // barrier();
                     pthread_kill(kth_tid[i], SIGUSR1);
-                    // barrier();
-                    // long long e_ = now();
-                    // printf("%lld\n", e_ - s_); 
-                    // sleep_spin(1000);
 #endif
                     ++uintr_sent[i];
-                    // last[i] = current;
                     ACCESS_ONCE(last[i]) = current;
-                    current = rdtsc();
-                    // compute(4000);
-                // }
-            }  
-            else {
-                ++fail[i];
-            } 
+                #ifdef SMART_PREEMPT
+                }
+                #endif
+            }   
         }
-
-        // current = rdtsc();
-        if (unlikely(current - log_time > 1000000000 * 2)) {
-            long long sent_total = 0, recv_total = 0, fail_total = 0;
-            int t;
-            for (t = 0; t < maxks; ++t) {
-                sent_total += uintr_sent[t];
-                recv_total += uintr_recv[t];
-                fail_total += fail[t];
-                uintr_sent[t] = 0;
-                uintr_recv[t] = 0;
-                fail[t] = 0;
-            }
-            printf("%lld: %lld %lld %lld\n", current, sent_total, recv_total, fail_total);
-            log_time = current;
-            current = rdtsc();
-
-            // printf("maxk: %d\n", maxks);
-            // for (i = 0; i< maxks; ++i) {
-            //     printf("kill %d: %lld\n", i,  ACCESS_ONCE(last[i]) );
-            // }
-
-            // uint64_t start1 = rdtsc(), end1;
-            // barrier();
-            // for (i = 0; i < maxks; ++i) {
-            //     _senduipi(uipi_index[i]);
-            // }
-            // barrier();
-            // end1 = rdtsc();
-
-            // uint64_t start2 = rdtsc(), end2;
-            // barrier();
-            // for (i = 0; i < maxks; ++i) {
-            // }
-            // barrier();
-            // end2 = rdtsc();
-
-            // printf("UIPI (%d): %lld %lld %lld\n", maxks, (end1 - start1), (end2 - start2), ((end1 - start1) - (end2 - start2)) / maxks);
-
-            uint64_t start1 = rdtsc(), end1;
-            barrier();
-            for (i = 0; i < maxks; ++i) {
-                *(cpu_preempt_points[i]) = 1;
-            }
-            barrier();
-            end1 = rdtsc();
-
-            uint64_t start2 = rdtsc(), end2;
-            barrier();
-            for (i = 0; i < maxks; ++i) {
-            }
-            barrier();
-            end2 = rdtsc();
-
-            printf("Concord (%d): %lld %lld %lld\n", maxks, (end1 - start1), (end2 - start2), ((end1 - start1) - (end2 - start2)) / maxks);
-        }
-
-
-
     } 
 
     return NULL;
@@ -346,8 +283,9 @@ void* signal_timer2(void*) {
             }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
                 if (pending_uthreads(i) || pending_cqe(i)) {
-                    printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
+                    // printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
                     pthread_kill(kth_tid[i], SIGUSR1);
+                    sleep_spin(2000);
                     ++uintr_sent[i];
                     ACCESS_ONCE(last[i]) = current;
                 }
@@ -378,8 +316,9 @@ void* signal_timer3(void*) {
             }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
                 if (pending_uthreads(i) || pending_cqe(i)) {
-                    printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
+                    // printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
                     pthread_kill(kth_tid[i], SIGUSR1);
+                    sleep_spin(1000);
                     ++uintr_sent[i];
                     ACCESS_ONCE(last[i]) = current;
                 }
@@ -394,8 +333,6 @@ void* signal_timer3(void*) {
 void uintr_timer_start() {
 	uintr_timer_flag = 1;
     start = now();
-    _stui();
-    // *(cpu_preempt_points[0]) = 1;
 }
 
 void uintr_timer_end() {
@@ -408,9 +345,8 @@ int uintr_init(void) {
     memset(uintr_sent, 0, sizeof(uintr_sent));
     memset(uintr_recv, 0, sizeof(uintr_recv));
 
-    TIMESLICE = atoi(getenv("TIMESLICE")) * 2000L;
-    // TIMESLICE = 5 * 1000L;
-	log_info("TIMESLICE: %lld us", TIMESLICE / 2000);
+    TIMESLICE = uthread_quantum_us * 1000;
+	log_info("quantum: %lld us", TIMESLICE / 1000);
     return 0;
 }
 
@@ -433,6 +369,8 @@ int uintr_init_thread(void) {
     }
     uintr_fd[kth_id] = uintr_fd_; 
 
+    _stui();
+        
     return 0;
 }
 
@@ -468,7 +406,8 @@ int uintr_init_late(void) {
 }
 
 void uintr_timer_summary(void) {
-	printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+	// printf("Execution: %.9f\n", 1.*(end - start) / 1e9);
+    fprintf(stderr, "Execution: %.9f\n", 1.*(end - start) / 1e9);
 
     long long uintr_sent_total = 0, uintr_recv_total = 0;
     int i;
@@ -476,6 +415,9 @@ void uintr_timer_summary(void) {
         uintr_sent_total += uintr_sent[i];
         uintr_recv_total += uintr_recv[i];
     }
-    printf("Preemption_sent: %lld\n", uintr_sent_total);
-    printf("Preemption_received: %lld\n", uintr_recv_total);	
+    // printf("Preemption_sent: %lld\n", uintr_sent_total);
+    // printf("Preemption_received: %lld\n", uintr_recv_total);
+
+    fprintf(stderr, "Preemption_sent: %lld\n", uintr_sent_total);
+    fprintf(stderr, "Preemption_received: %lld\n", uintr_recv_total);
 }

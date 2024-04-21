@@ -32,7 +32,7 @@
 #define RUNTIME_MAX_THREADS		100000
 #define RUNTIME_STACK_SIZE		256 * KB
 #define RUNTIME_GUARD_SIZE		256 * KB
-#define RUNTIME_RQ_SIZE			128
+#define RUNTIME_RQ_SIZE			32
 #define RUNTIME_MAX_TIMERS		4096
 #define RUNTIME_SCHED_POLL_ITERS	0
 #define RUNTIME_SCHED_MIN_POLL_US	2
@@ -181,7 +181,7 @@ struct thread_tf {
 	uint64_t zmm31[4] __attribute__((aligned(64)));
 	
 #elif defined(UNSAFE_PREEMPT_SIMDREG)
-	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY)
+	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	/* Mask registers */
 	// uint64_t k0; ko is a hardcoded constant 
 	uint64_t k1;
@@ -550,21 +550,20 @@ struct kthread {
 	unsigned int		rcu_gen;
 	unsigned int		curr_cpu;
 #ifdef GC
-	#ifdef PREEMPTED_RQ
-	uint32_t            preempted_rq_head;
-	uint32_t  	        preempted_rq_tail;
-	#else
 	uint64_t		local_gc_gen;
-	#endif
-	unsigned long		pad1[1];
+	uint64_t            uthread_start_ts;
 #else
-	#ifdef PREEMPTED_RQ
+	uint64_t            uthread_start_ts;
+	unsigned long		pad1[1];
+#endif
+
+	/* add a cache line */
+#ifdef PREEMPTED_RQ
 	uint32_t            preempted_rq_head;
 	uint32_t  	        preempted_rq_tail;
-	unsigned long		pad1[1];
-	#else
-	unsigned long		pad1[2];
-	#endif
+	long                is_preempted;
+	struct list_head	preempted_rq_overflow;
+	unsigned long       pad3[4];
 #endif
 
 	/* 3rd cache-line */
@@ -605,7 +604,9 @@ BUILD_ASSERT(offsetof(struct kthread, rq) % CACHE_LINE_SIZE == 0);
 BUILD_ASSERT(offsetof(struct kthread, timer_lock) % CACHE_LINE_SIZE == 0);
 BUILD_ASSERT(offsetof(struct kthread, storage_q) % CACHE_LINE_SIZE == 0);
 BUILD_ASSERT(offsetof(struct kthread, stats) % CACHE_LINE_SIZE == 0);
-
+#ifdef PREEMPTED_RQ
+BUILD_ASSERT(offsetof(struct kthread, preempted_rq_head) % CACHE_LINE_SIZE == 0);
+#endif
 DECLARE_PERTHREAD(struct kthread *, mykthread);
 
 /**
