@@ -29,8 +29,8 @@ Copyright (c) 2003-2005 Andreas Loebel.
 
 extern void refresh_neighbour_lists _PROTO_(( network_t * ));
 extern long refresh_potential _PROTO_(( network_t * ));
-extern double flow_cost _PROTO_(( network_t * ));
-extern double flow_org_cost _PROTO_(( network_t * ));
+// extern double flow_cost _PROTO_(( network_t * ));
+// extern double flow_org_cost _PROTO_(( network_t * ));
 extern long primal_feasible _PROTO_(( network_t * ));
 extern long dual_feasible _PROTO_(( network_t * ));
 extern long getfree _PROTO_(( network_t * ));

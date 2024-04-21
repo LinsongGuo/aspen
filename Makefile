@@ -37,6 +37,8 @@ else
 		ifeq ($(CONFIG_UNSAFE_PREEMPT),simdreg)
 			ifeq ($(CONFIG_GPR_ONLY),y)
 				runtime_asm = runtime/switch.S
+			else ifeq ($(CONFIG_USE_XSAVE),y)
+				runtime_asm = runtime/switch.S
 			else
 				runtime_asm = runtime/switch_simdreg.S
 			endif

@@ -6,12 +6,15 @@
 # 	@echo "*** Your distribution is probably corrupt."
 # 	@echo
 
-CFLAGS += -g -O3 # -mno-avx -mno-sse
+CFLAGS += -g -O3 -mno-avx -mno-sse
 
 SRCS = $(wildcard *.c)
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 
 all: $(OBJS) 
+
+# mcfutil.o: mcfutil.c
+# 	$(CC) -g -O3 -muintr -I../.. -c $< -o $@
 
 %.o: %.c 
 	$(CC) $(CFLAGS) -muintr -I../.. -c $< -o $@

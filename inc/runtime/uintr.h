@@ -8,6 +8,11 @@
 #include <x86intrin.h>
 #include <runtime/thread.h>
 
+enum rq_type_t {
+    NEW_TASK,
+    PREEMPTED_TASK
+};
+
 extern void uintr_timer_start(void);
 extern void uintr_timer_end(void);
 extern void uintr_timer_summary(void);

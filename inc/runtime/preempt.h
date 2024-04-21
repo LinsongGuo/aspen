@@ -15,6 +15,13 @@ DECLARE_PERTHREAD(unsigned int, preempt_cnt);
 DECLARE_PERTHREAD(unsigned int, upreempt_cnt);
 extern void preempt(void);
 
+#ifdef USE_XSAVE
+/* maximum size in bytes needed for xsave */
+extern size_t xsave_max_size;
+/* extended processor features to save */
+extern size_t xsave_features;
+#endif
+
 /* this flag is set whenever there is _not_ a pending preemption */
 #define PREEMPT_NOT_PENDING	(1 << 31)
 
@@ -120,7 +127,11 @@ static inline void preempt_enable(void)
 		if (unlikely(perthread_read(preempt_cnt) == 0))
 			preempt();
 		else if (unlikely(preempt_enabled() && perthread_read(upreempt_cnt) == 0)) {
+#ifndef PREEMPTED_RQ
 			thread_yield();
+#else
+			thread_preempt_yield();
+#endif
 		}
 	#endif
 #else
@@ -138,7 +149,11 @@ static inline void preempt_enable(void)
 			preempt();
 		else if (unlikely(preempt_enabled() && perthread_read(upreempt_cnt) == 0)) {
 			clear_upreempt_needed();
+#ifndef PREEMPTED_RQ
 			thread_yield();
+#else
+			thread_preempt_yield();
+#endif
 		}
 	#endif
 #endif

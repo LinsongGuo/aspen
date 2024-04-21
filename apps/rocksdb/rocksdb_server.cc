@@ -87,6 +87,25 @@ static inline void DoScan(rocksdb_readoptions_t *readoptions) {
   rocksdb_iter_destroy(iter);
 }
 
+
+// static inline void DoScan(rocksdb_readoptions_t *readoptions) {
+//   const char *retr_key;
+//   size_t klen;
+//   rocksdb_iterator_t *iter = rocksdb_create_iterator(db, readoptions);
+//   rocksdb_iter_seek_to_first(iter);
+//   int cnt = 0;
+//   while (rocksdb_iter_valid(iter)) {
+//     retr_key = rocksdb_iter_key(iter, &klen);
+//     // log_debug("Scanned key %.*s\n", (int)klen, retr_key);
+//     rocksdb_iter_next(iter);
+//     cnt++;
+//     if (cnt % 125 == 0) {
+//       rt::Yield();
+//     }
+//   } 
+//   rocksdb_iter_destroy(iter);
+// }
+
 static inline void DoGet(rocksdb_readoptions_t *readoptions) {
   size_t klen;
   const char *retr_key;
@@ -325,6 +344,53 @@ void MainHandler_local(void *arg) {
   init_key_value();
   rocksdb_init();
   PutInit();
+  // Get5000();
+
+  unsigned int i = 0;
+  uint64_t durations[1000];
+  unsigned long long total = 0;
+  for (i = 0; i < 1000; i++) {
+    rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+    uint64_t start = rdtscp(NULL);
+    DoScan(readoptions);
+    uint64_t end = rdtscp(NULL);
+    rocksdb_readoptions_destroy(readoptions);
+    durations[i] = end - start;
+    total += end - start;
+  }
+  std::sort(std::begin(durations), std::end(durations));
+  fprintf(stderr, "stats for %u Scan iterations: \n", i);
+  fprintf(stderr, "avg: %0.3f\n",
+          (double)total / i / (double)cycles_per_us);
+  fprintf(stderr, "median: %0.3f\n",
+          (double)durations[i / 2] / (double)cycles_per_us);
+  fprintf(stderr, "p99.9: %0.3f\n",
+          (double)durations[i * 999 / 1000] / (double)cycles_per_us);
+
+  uint64_t durations2[5000];  
+  total = 0;
+  for (i = 0; i < 5000; i++) {
+    int j = rand() % 5000;
+    rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+    uint64_t start = rdtscp(NULL);
+    barrier();
+    DoGet(readoptions, j);
+    barrier();
+    uint64_t end = rdtscp(NULL);
+    rocksdb_readoptions_destroy(readoptions);
+    durations2[i] = end - start;
+    total += end - start;
+  }
+ 
+  std::sort(std::begin(durations2), std::end(durations2));
+  fprintf(stderr, "stats for %u Get iterations: \n", i);
+  fprintf(stderr, "avg: %0.3f\n",
+          (double)total / i / (double)cycles_per_us);
+  fprintf(stderr, "median: %0.3f\n",
+          (double)durations2[i / 2] / (double)cycles_per_us);
+  fprintf(stderr, "p99.9: %0.3f\n",
+          (double)durations2[i * 999 / 1000] / (double)cycles_per_us);
+
 
   // const int task_num = 2;
   // std::string bench_name[task_num] = {"Get5000", "Get5000"};
@@ -335,13 +401,34 @@ void MainHandler_local(void *arg) {
   // std::string bench_name[task_num] = {"scan_test"};
   // bench_type bench_ptr[task_num] = {scan_test};
 
-  //   const int task_num = 1;
+
+  // const int task_num = 1;
   // std::string bench_name[task_num] = {"get_test"};
   // bench_type bench_ptr[task_num] = {get_test};
 
-  const int task_num = 2;
-  std::string bench_name[task_num] = {"get_test", "scan_test"};
-  bench_type bench_ptr[task_num] = {get_test, scan_test};
+    const int task_num = 2;
+  std::string bench_name[task_num] = {"get_test", "get_test"};
+  bench_type bench_ptr[task_num] = {get_test, get_test};
+
+  //   const int task_num = 2;
+  // std::string bench_name[task_num] = {"get_test", "scan_test"};
+  // bench_type bench_ptr[task_num] = {get_test, scan_test};
+
+  // const int task_num = 2;
+  // std::string bench_name[task_num] = {"scan_test", "scan_test"};
+  // bench_type bench_ptr[task_num] = {scan_test, scan_test};
+
+  // const int task_num = 8;
+  // std::string bench_name[task_num] = {"get_test", "scan_test", "get_test", "scan_test", "get_test", "scan_test", "get_test", "scan_test"};
+  // bench_type bench_ptr[task_num] = {get_test, scan_test, get_test, scan_test, get_test, scan_test, get_test, scan_test};
+
+  //     const int task_num = 8;
+  // std::string bench_name[task_num] = {"get_test", "get_test", "get_test", "get_test", "get_test", "get_test", "get_test", "get_test"};
+  // bench_type bench_ptr[task_num] = {get_test, get_test, get_test, get_test, get_test, get_test, get_test, get_test};
+
+  // const int task_num = 8;
+  // std::string bench_name[task_num] = {"scan_test", "scan_test", "scan_test", "scan_test", "scan_test", "scan_test", "scan_test", "scan_test"};
+  // bench_type bench_ptr[task_num] = {scan_test, scan_test, scan_test, scan_test, scan_test, scan_test, scan_test, scan_test};
 
   // The code can only run on single core.
   int started = 0, finished = 0;

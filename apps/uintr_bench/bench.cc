@@ -84,14 +84,13 @@ void parse(std::string input) {
 }
 
 
-void MainHandler(void *arg) {	// printf("enter handler\n");
+void MainHandler(void *arg) {
 	rt::WaitGroup wg(1);
 	barrier_init(&barrier, 1);
 	
 	// Init functions for benchmarks.
-  	base64_init();
+  	// base64_init();
 	// cmp_init();
-	
 	rt::UintrTimerStart();
 	_stui();
 
@@ -99,15 +98,15 @@ void MainHandler(void *arg) {	// printf("enter handler\n");
 	int task_num = task_name.size();
 	for (int i = 0; i < task_num; ++i) {
 		rt::Spawn([&, i]() {
-			started += 1;
-    		// printf("%s start: %d %d\n", task_name[i].c_str(), i, started);
+			// printf("for %d\n", i);
+			// started += 1;
+    		// printf("===== %s start: %d %d\n", task_name[i].c_str(), i, started);
 			
-			if (started < task_num) {
-				rt::Yield();
-			}
+			// if (started < task_num) {
+			 	// rt::Yield();
+			// }
 			
 			task_result[i] = task_ptr[i]();
-					
 			finished += 1;
 			if (finished == task_num) {
 				wg.Done();

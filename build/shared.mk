@@ -50,6 +50,7 @@ ifeq ($(CONFIG_DEBUG),y)
 FLAGS += -DDEBUG -rdynamic -O0 -ggdb -mssse3 -muintr
 LDFLAGS += -rdynamic
 else
+# FLAGS += -DNDEBUG -O3 -mssse3
 FLAGS += -DNDEBUG -O3 -mavx512f
 # FLAGS += -DNDEBUG -O3 -mavx2
 ifeq ($(CONFIG_OPTIMIZE),y)
@@ -121,6 +122,10 @@ endif
 
 ifeq ($(CONFIG_GPR_ONLY),y)
 FLAGS += -DGPR_ONLY
+endif
+
+ifeq ($(CONFIG_USE_XSAVE),y)
+FLAGS += -DUSE_XSAVE -m64 -mxsavec
 endif
 
 ifeq ($(CONFIG_SMART_PREEMPT), y)

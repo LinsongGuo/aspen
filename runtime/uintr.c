@@ -115,10 +115,6 @@ long long now() {
 	return ts.tv_sec * 1e9 + ts.tv_nsec;
 }
 
-void print(uint64_t d) {
-        printf("%llu\n", d);
-
-}
 void __attribute__ ((interrupt))
     __attribute__((target("general-regs-only" /*, "inline-all-stringops"*/)))
      ui_handler(struct __uintr_frame *ui_frame,

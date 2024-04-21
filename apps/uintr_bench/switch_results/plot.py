@@ -110,7 +110,26 @@ def plot_overhead(work):
     plt.show()
 
 
+def print_overhead(work):    
+    nums = [i for i in range(1, Num+1)]
+    simdreg_e = get_exe(work + '/simdreg/summary.csv')
+    custom_e = get_exe(work + '/custom/summary.csv')
+    simdreg_u = get_uintr(work + '/simdreg/summary.csv')
+    custom_u = get_uintr(work + '/custom/summary.csv')
+    
+    for i in range(1, Num):
+        idx = median_index(simdreg_e[i])
+        e1 = simdreg_e[i][idx]
+        u1 = simdreg_u[i][idx]
+        
+        idx = median_index(custom_e[i])
+        e2 = custom_e[i][idx]
+        u2 = custom_u[i][idx]
+        
+        d = (e1 - e2) / u2 * 1e9
+        print(f"{i+1} user threads: {d:.1f} ns")
 
 work = sys.argv[1]
-plot_exe(work)
-plot_overhead(work)
+# plot_exe(work)
+# plot_overhead(work)
+print_overhead(work)

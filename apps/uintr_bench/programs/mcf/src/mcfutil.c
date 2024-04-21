@@ -117,7 +117,7 @@ long refresh_potential( net )
 
 
 
-
+/*
 #ifdef _PROTO_
 double flow_cost( network_t *net )
 #else
@@ -167,6 +167,7 @@ double flow_cost( net )
     
     return (double)fleet * (double)net->bigM + (double)operational_cost;
 }
+*/
 
 
 
@@ -175,8 +176,7 @@ double flow_cost( net )
 
 
 
-
-
+/*
 #ifdef _PROTO_
 double flow_org_cost( network_t *net )
 #else
@@ -225,7 +225,7 @@ double flow_org_cost( net )
     
     return (double)fleet * (double)net->bigM + (double)operational_cost;
 }
-
+*/
 
 
 

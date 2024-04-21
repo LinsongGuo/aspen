@@ -644,7 +644,10 @@ static __always_inline void enter_schedule(thread_t *curth)
 
 	/* prepare current thread for sleeping */
 	curth->last_cpu = k->curr_cpu;
+// uint64_t ss = rdtsc();
 
+	// uint64_t ee = rdtsc();
+    // printf("%llu\n", ee - ss);    
 	spin_lock(&k->lock);
 	now_tsc = rdtsc();
 	

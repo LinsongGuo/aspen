@@ -22,6 +22,7 @@ Copyright (c) 2003-2005 Andreas Loebel.
 
 #include "mcf.h"
 #include "programs.h"
+// #include <time.h>
 
 // #define REPORT
 
@@ -141,6 +142,11 @@ void mcf_init() {
 }
 
 
+// long long now2() {
+// 	struct timespec ts;
+// 	timespec_get(&ts, TIME_UTC);
+// 	return ts.tv_sec * 1e9 + ts.tv_nsec;
+// }
 
 
 // #ifdef _PROTO_
@@ -172,7 +178,7 @@ long long mcf()
     // strcpy( net.inputfile, argv[1] );
     strcpy( net.inputfile, "/data/preempt/caladan-uintr/apps/uintr_bench/programs/mcf/data/test/input/inp.in");
     
-
+    // long long read_start = now2();
     if( read_min( &net ) )
     {
         printf( "read error, exit\n" );
@@ -180,8 +186,10 @@ long long mcf()
         return -1;
     }
     // printf("mcf clui\n");
+    // long long read_end = now2();
+    // printf("read_time: %.6f\n", 1.*(read_end - read_start)/1e9);
     _stui();
-
+    
 
 #ifdef REPORT
     printf( "nodes                      : %ld\n", net.n_trips );

@@ -96,7 +96,7 @@ void get_test(void* arg) {
 }
 
 void scan_test(void* arg) {
-  for (int i = 0; i < 14500; i++) {
+  for (int i = 0; i < 15500; i++) {
     rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
     DoScan(db, readoptions);
     rocksdb_readoptions_destroy(readoptions);
@@ -329,8 +329,8 @@ const int BENCH_NUM = 5;
 std::string bench_name_options[BENCH_NUM] = {"get", "scan", "rangescan_front", "rangescan_end", "rangescan_random"};
 bench_type bench_ptr_options[BENCH_NUM] = {get_test, scan_test, rangescan_front_test, rangescan_end_test, rangescan_random_test};
 int task_num = 0, get_num = 0;
-std::string task_name[10];
-bench_type task_ptr[10];
+std::string task_name[36];
+bench_type task_ptr[36];
 
 bench_type name2ptr(std::string name) {
 	bench_type ptr = nullptr;

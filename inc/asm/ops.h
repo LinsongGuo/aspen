@@ -33,6 +33,13 @@ static inline void cpuid(int leaf, struct cpuid_info *regs)
 	asm volatile("cpuid" : "=a" (regs->eax), "=b" (regs->ebx), "=c" (regs->ecx), "=d" (regs->edx) : "a" (leaf));
 }
 
+static inline void cpuid2(int leaf, int subleaf, struct cpuid_info *regs)
+{
+	asm volatile("cpuid" : "=a" (regs->eax), "=b" (regs->ebx),
+		     "=c" (regs->ecx), "=d" (regs->edx) : "a" (leaf),
+		     "c"(subleaf));
+}
+
 static inline uint64_t rdtsc(void)
 {
 #if __GNUC_PREREQ(10, 0)
