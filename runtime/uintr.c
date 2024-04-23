@@ -53,7 +53,7 @@ long long start, end;
 
 void concord_func() {
     concord_preempt_now = 0;
-    // uintr_recv[myk()->kthread_idx]++;
+    uintr_recv[myk()->kthread_idx]++;
     
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
@@ -127,10 +127,7 @@ void __attribute__ ((interrupt))
     #ifdef PREEMPTED_RQ
      	thread_preempt_yield();
     #else
-        //uint64_t ss = rdtsc();
      	thread_yield();
-        //uint64_t ee = rdtsc();
-        //print(ee - ss);
     #endif
 	}
     else {
@@ -390,13 +387,9 @@ int uintr_init(void) {
     memset(uintr_recv, 0, sizeof(uintr_recv));
 
     TIMESLICE = uthread_quantum_us * 1000 * GHZ;
-    if (uthread_quantum_us > 100) {
-        HARD_TIMESLICE = 100000000LL * 1000 * GHZ;
-    } else {
-        HARD_TIMESLICE = 100 * 1000 * GHZ;
-    }
+    HARD_TIMESLICE = uthread_hard_quantum_us * 1000 * GHZ;
 	log_info("quantum: %ld us", TIMESLICE / 1000 / GHZ);
-	log_info("quantum2: %ld us", HARD_TIMESLICE / 1000 / GHZ);
+	log_info("hard quantum: %ld us", HARD_TIMESLICE / 1000 / GHZ);
     return 0;
 }
 

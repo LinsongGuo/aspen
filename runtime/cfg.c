@@ -186,6 +186,24 @@ static int parse_runtime_uthread_quantum_us(const char *name, const char *val)
 	return 0;
 }
 
+static int parse_runtime_uthread_hard_quantum_us(const char *name, const char *val)
+{
+	long long tmp;
+	int ret;
+
+	ret = str_to_longlong(val, &tmp);
+	if (ret)
+		return ret;
+
+	if (tmp < 0 || tmp > 100000000) {
+		log_err("invalid preempt quantum, '%lld'", tmp);
+		return -EINVAL;
+	}
+
+	uthread_hard_quantum_us = tmp;
+	return 0;
+}
+
 static int parse_runtime_priority(const char *name, const char *val)
 {
 	if (!strcmp(val, "lc")) {
@@ -413,6 +431,7 @@ static const struct cfg_handler cfg_handlers[] = {
 	{ "runtime_guaranteed_kthreads", parse_runtime_guaranteed_kthreads,
 			false },
 	{ "runtime_uthread_quantum_us", parse_runtime_uthread_quantum_us, false},
+	{ "runtime_uthread_hard_quantum_us", parse_runtime_uthread_hard_quantum_us, false},
 	{ "runtime_priority", parse_runtime_priority, false },
 	{ "runtime_ht_punish_us", parse_runtime_ht_punish_us, false },
 	{ "runtime_qdelay_us", parse_runtime_qdelay_us, false },

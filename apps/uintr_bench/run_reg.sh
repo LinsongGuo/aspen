@@ -1,9 +1,9 @@
 #!/bin/bash
 
 task='mcf'
-num=(24) # 3 4 5 6 7 8 10 12 14 16 20 24 28 32)
+num=(8 12 16 20 24 28 32)
 
-taskpath="reg_results/$task/5"
+taskpath="reg_results_test/$task/5"
 if [ ! -d "$taskpath" ]; then
     mkdir $taskpath
 fi 
@@ -18,10 +18,34 @@ for n in "${num[@]}"; do
     
     echo "Work: $work"
 
-    # =========== saving all ===========
-    mode='save_all'
+
+    # =========== saving general  ===========
+    mode='save_gen'
     cd ../..
+    sed -i "18s/.*/CONFIG_UNSAFE_PREEMPT=simdreg/" build/config
+    sed -i "22s/.*/CONFIG_GPR_ONLY=y/" build/config
+    sed -i "24s/.*/CONFIG_USE_XSAVE=n/" build/config
+    ./compile2.sh
+    cd apps/uintr_bench
+    make clean
+    make
+
+    modepath="$workpath/$mode"
+    if [ ! -d "$modepath" ]; then
+        mkdir $modepath
+    fi 
+
+    for run in {1..33}; do
+        sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
+    done
+
+
+    # =========== saving all 256 ===========
+    mode='save_256'
+    cd ../..
+    sed -i "18s/.*/CONFIG_UNSAFE_PREEMPT=simdreg/" build/config
     sed -i "22s/.*/CONFIG_GPR_ONLY=n/" build/config
+    sed -i "24s/.*/CONFIG_USE_XSAVE=n/" build/config
     ./compile2.sh
     cd apps/uintr_bench
     make clean
@@ -32,14 +56,38 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
     
-    for run in {30..45}; do
+    for run in {1..33}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
 
-    # =========== saving ess ===========
-    mode='save_ess'
+
+    # =========== saving all 512 ===========
+    mode='save_512'
     cd ../..
-    sed -i "22s/.*/CONFIG_GPR_ONLY=y/" build/config
+    sed -i "18s/.*/CONFIG_UNSAFE_PREEMPT=simdreg_512/" build/config
+    sed -i "22s/.*/CONFIG_GPR_ONLY=n/" build/config
+    sed -i "24s/.*/CONFIG_USE_XSAVE=n/" build/config
+    ./compile2.sh
+    cd apps/uintr_bench
+    make clean
+    make
+
+    modepath="$workpath/$mode"
+    if [ ! -d "$modepath" ]; then
+        mkdir $modepath
+    fi 
+    
+    for run in {1..33}; do
+        sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
+    done
+
+   
+    # =========== xsave  ===========
+    mode='xsave'
+    cd ../..
+    sed -i "18s/.*/CONFIG_UNSAFE_PREEMPT=simdreg/" build/config
+    sed -i "22s/.*/CONFIG_GPR_ONLY=n/" build/config
+    sed -i "24s/.*/CONFIG_USE_XSAVE=y/" build/config
     ./compile2.sh
     cd apps/uintr_bench
     make clean
@@ -50,8 +98,9 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
 
-    for run in {30..45}; do
+    for run in {1..33}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
+
 
 done

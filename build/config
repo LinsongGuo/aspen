@@ -21,7 +21,7 @@ CONFIG_PREEMPT=uintr
 # only use general-purpose registers or not
 CONFIG_GPR_ONLY=n
 # do you want to use Xsave to save extended registers
-CONFIG_USE_XSAVE=y
+CONFIG_USE_XSAVE=n
 # do you want to enable smart preemption policy
 CONFIG_SMART_PREEMPT=n
 # do you want to have a separate runqueue for preempted uthreads
