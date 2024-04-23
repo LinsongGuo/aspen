@@ -1035,21 +1035,45 @@ void thread_yield(void)
 
 #ifdef USE_XSAVE
 	/* allocate buffer for xsave area on stack */
-	unsigned char* xsave_buf = alloca(xsave_max_size + 64);
-	xsave_buf = (unsigned char *)align_up((uintptr_t)xsave_buf, 64);
-	/* zero xsave header */
-	__builtin_memset(xsave_buf + 512, 0, 64);
-	/* save state */
-	__builtin_ia32_xsavec64(xsave_buf, xsave_features);
-#endif
-    //uint64_t ss = rdtsc();
-    enter_schedule(curth);
-    // uint64_t ee = rdtsc();
-    // printf("%llu\n", ee - ss);
+	// unsigned char* xsave_buf = alloca(xsave_max_size + 64);
+	// xsave_buf = (unsigned char *)align_up((uintptr_t)xsave_buf, 64);
+	unsigned char* xsave_buf = (unsigned char *)align_up((uintptr_t)curth->tf.xsave_area, 64);
 	
+	/* zero xsave header */
+	// memset(xsave_buf, 233, xsave_max_size);
+	__builtin_memset(xsave_buf + 512, 0, 64);
+
+	uint64_t xinuse = __builtin_ia32_xgetbv(1);
+	// printf("xinuse: %lx\n", xinuse);
+	
+	// int cnt = 0; 
+	// int i;
+	// for (i = 576; i < 576+64+1024; ++i) {
+	// 	if ((unsigned int)*(xsave_buf+i) != 233)
+	// 		cnt++;
+	// }
+	// printf("before: %d\n", cnt);
+
+	/* save state */
+	__builtin_ia32_xsavec64(xsave_buf, xinuse);
+#endif
+
+    enter_schedule(curth);
+
 #ifdef USE_XSAVE
+
+	// cnt = 0;
+	// for (i = 576; i < 576+64+1024; ++i) {
+	// 	if ((unsigned int)*(xsave_buf+i) != 233)
+	// 		cnt++;
+	// }
+	// printf("after: %d\n", cnt);
+
 	/* restore state */
-	__builtin_ia32_xrstor64(xsave_buf, xsave_features);
+
+	// printf("xinuse after save: %lx\n", *((uint64_t*)(xsave_buf + 512)));
+
+	__builtin_ia32_xrstor64(xsave_buf, xinuse);
 #endif
 }
 

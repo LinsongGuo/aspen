@@ -226,6 +226,8 @@ struct thread_tf {
 	uint64_t ymm29[4] __attribute__((aligned(32)));
 	uint64_t ymm30[4] __attribute__((aligned(32)));
 	uint64_t ymm31[4] __attribute__((aligned(32)));
+	#elif defined(USE_XSAVE)
+	unsigned char* xsave_area[11008 + 64];
 	#endif
 #endif 
 };

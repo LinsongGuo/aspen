@@ -140,12 +140,15 @@ int preempt_init(void)
 	}
 
 #ifdef USE_XSAVE
+	log_info("xcr0: %llx", _xgetbv(0));
+    log_info("xinuse: %llx", _xgetbv(1));
 	// borrowed from Caladan:
-	int ret = syscall(SYS_arch_prctl, ARCH_GET_XCOMP_SUPP, &xsave_features);
-	if (unlikely(ret)) {
-		log_err("failed to get XSAVE features");
-		return -1;
-	}
+	// int ret = syscall(SYS_arch_prctl, ARCH_GET_XCOMP_SUPP, &xsave_features);
+	// if (unlikely(ret)) {
+	// 	log_err("failed to get XSAVE features");
+	// 	return -1;
+	// }
+	// log_info("xsave_features: %lx\n", xsave_features);
 
 	struct cpuid_info regs;
 	cpuid2(0xd, 0, &regs);
