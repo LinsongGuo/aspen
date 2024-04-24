@@ -19,3 +19,6 @@
 [submodule "apps/rocksdb_concord/rocksdb"]
 	path = apps/rocksdb_concord/rocksdb
 	url = https://github.com/LinsongGuo/rocksdb.git
+[submodule "apps/dataframe/concord"]
+	path = apps/dataframe/concord
+	url = https://github.com/LinsongGuo/concord.git

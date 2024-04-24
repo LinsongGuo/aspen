@@ -17,11 +17,11 @@
 #include <DataFrame/Utils/DateTime.h>              // Cool and handy date-time object
 
 
-long long now() {
-	struct timespec ts;
-	timespec_get(&ts, TIME_UTC);
-	return ts.tv_sec * 1e9 + ts.tv_nsec;
-}
+// long long now() {
+// 	struct timespec ts;
+// 	timespec_get(&ts, TIME_UTC);
+// 	return ts.tv_sec * 1e9 + ts.tv_nsec;
+// }
 
 // DataFrame library is entirely under hmdf name-space
 using namespace hmdf;
@@ -41,20 +41,20 @@ barrier_t barrier;
 DTDataFrame ibm_dt_df;
 
 void init() {
-    ibm_dt_df.read("DataFrame/data/DT_IBM.csv", io_format::csv);
+    ibm_dt_df.read("DataFrame/data/DT_IBM.csv", io_format::csv2);
 
     // First let’s make sure if there are missing data in our important columns, we fill them up.
-    ibm_dt_df.fill_missing<double>({ "IBM_Close", "IBM_Open", "IBM_High", "IBM_Low" },
-                                   fill_policy::linear_interpolate);
+    ibm_dt_df.fill_missing<double, 4>({ "IBM_Close", "IBM_Open", "IBM_High", "IBM_Low" },
+                                   fill_policy::fill_forward);
                                    
     // Calculate the returns and load them as a column.
     ReturnVisitor<double>   return_v { return_policy::log };
-    // const auto              &return_result =
-    //     ibm_dt_df.single_act_visit<double>("IBM_Close", return_v).get_result();
-    // ibm_dt_df.load_column("IBM_Return", std::move(return_result));
+    const auto              &return_result =
+        ibm_dt_df.single_act_visit<double>("IBM_Close", return_v).get_result();
+    ibm_dt_df.load_column("IBM_Return", std::move(return_result));
 
-    ibm_dt_df.single_act_visit<double>("IBM_Close", return_v);
-    ibm_dt_df.load_result_as_column(return_v, "IBM_Return");
+    // ibm_dt_df.single_act_visit<double>("IBM_Close", return_v);
+    // ibm_dt_df.load_result_as_column(return_v, "IBM_Return");
     ibm_dt_df.get_column<double>("IBM_Return")[0] = 0;  // Remove the NaN
 }
 
@@ -73,9 +73,9 @@ double do_kmeans() {
 }
 
 double do_decom() {
-    // DecomposeVisitor<double, DateTime>  decom { 170, 0.1, 0.01 };
-    // ibm_dt_df.single_act_visit<double>("IBM_Return", decom);
-    // return decom.get_seasonal()[0];
+    DecomposeVisitor<double, DateTime>  decom { 170, 0.1, 0.01 };
+    ibm_dt_df.single_act_visit<double>("IBM_Return", decom);
+    return decom.get_seasonal()[0];
     return 0;
 }
 
@@ -93,7 +93,7 @@ double loop_kmeans() {
     double res;
     for (unsigned i = 0; i < N; ++i) {
         res = do_kmeans();
-        kmeans_res.push_back(res);
+        // kmeans_res.push_back(res);
     }
     return res;
 }
@@ -150,6 +150,8 @@ void MainHandler_local(void *arg) {
 		
     init();
 
+    // printf("init ends\n");
+
     double results[10];
 
     rt::UintrTimerStart();    
@@ -182,9 +184,9 @@ void MainHandler_local(void *arg) {
     //     wg.Done();
     // });
 	
-    for (unsigned i = 0; i < N; ++i) {
-        std::cout << kmeans_res[i] << ' ';
-    }
+    // for (unsigned i = 0; i < N; ++i) {
+    //     std::cout << kmeans_res[i] << ' ';
+    // }
     // std::cout << std::endl;
     // long long start = now();
     // double res = do_max();
