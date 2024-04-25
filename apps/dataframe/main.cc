@@ -75,8 +75,32 @@ double do_kmeans() {
 double do_decom() {
     DecomposeVisitor<double, DateTime>  decom { 170, 0.1, 0.01 };
     ibm_dt_df.single_act_visit<double>("IBM_Return", decom);
-    return decom.get_seasonal()[0];
-    return 0;
+    return decom.get_seasonal()[1000];
+}
+
+double do_decay() {
+    DecayVisitor<double, DateTime>  decay(5, true);
+    ibm_dt_df.single_act_visit<double>("IBM_Close", decay);
+    return decay.get_result()[1000];
+}
+
+double do_ad() {
+    AccumDistVisitor<double, DateTime>  ad;
+    ibm_dt_df.single_act_visit<double, double, double, double, long>("IBM_Low", "IBM_High", "IBM_Open", "IBM_Close", "IBM_Volume", ad);
+    return ad.get_result()[1000];
+}
+
+double do_ppo() {
+    PercentPriceOSCIVisitor<double, DateTime>  ppo;
+    ibm_dt_df.single_act_visit<double>("IBM_Close", ppo);
+    return ppo.get_result()[1000];
+}
+
+int constant;
+double do_rmv() {
+    RollingMidValueVisitor<double, DateTime>  rmv (constant);
+    ibm_dt_df.single_act_visit<double, double>("IBM_Low", "IBM_High", rmv);
+    return rmv.get_result()[1000];
 }
 
 const unsigned N = 1000;
@@ -88,12 +112,10 @@ double loop_max() {
     return res;
 }
 
-std::vector<double> kmeans_res;
 double loop_kmeans() {
     double res;
     for (unsigned i = 0; i < N; ++i) {
         res = do_kmeans();
-        // kmeans_res.push_back(res);
     }
     return res;
 }
@@ -102,15 +124,51 @@ double loop_decom() {
     double res;
     for (unsigned i = 0; i < N; ++i) {
         res = do_decom();
-        // kmeans_res.push_back(res);
+    }
+    return res;
+}
+
+// std::vector<double> res_vec;
+double loop_ad() {
+    double res;
+    for (unsigned i = 0; i < N; ++i) {
+        res = do_ad();
+        // res_vec.push_back(res);
+    }
+    return res;
+}
+
+double loop_ppo() {
+    double res;
+    for (unsigned i = 0; i < N; ++i) {
+        res = do_ppo();
+        // res_vec.push_back(res);
+    }
+    return res;
+}
+
+double loop_decay() {
+    double res;
+    for (unsigned i = 0; i < N; ++i) {
+        res = do_decay();
+        // res_vec.push_back(res);
+    }
+    return res;
+}
+
+double loop_rmv() {
+    double res;
+    for (unsigned i = 0; i < N; ++i) {
+        res = do_rmv();
+        // res_vec.push_back(res);
     }
     return res;
 }
 
 typedef double (*task_type)(void);
-const unsigned TASK_NUM = 3;
-std::string task_name_options[TASK_NUM] = {"max", "kmeans", "decom"};
-task_type task_ptr_options[TASK_NUM] = {loop_max, loop_kmeans, loop_decom};
+const unsigned TASK_NUM = 7;
+std::string task_name_options[TASK_NUM] = {"max", "kmeans", "decom", "ad", "ppo", "decay", "rmv"};
+task_type task_ptr_options[TASK_NUM] = {loop_max, loop_kmeans, loop_decom, loop_ad, loop_ppo, loop_decay, loop_rmv};
 unsigned task_num = 0;
 std::string task_name[10];
 task_type task_ptr[10];
@@ -173,52 +231,25 @@ void MainHandler_local(void *arg) {
         std::cout << results[i] << ' ';
     }
     std::cout << std::endl;
-
-    // rt::Spawn([&]() {
-    //     res1 = loop_max();
-    //     wg.Done();
-    // });
-	
-    // rt::Spawn([&]() {
-    //     res2 = loop_kmeans();
-    //     wg.Done();
-    // });
 	
     // for (unsigned i = 0; i < N; ++i) {
-    //     std::cout << kmeans_res[i] << ' ';
+    //     std::cout << res_vec[i] << ' ';
     // }
-    // std::cout << std::endl;
-    // long long start = now();
-    // double res = do_max();
-    // long long end = now();
-    // std::cout << "max: " << res << ' ' << end - start << std::endl;
-
-    // start = now();
-    // res = do_kmeans();
-    // end = now();
-    // std::cout << "k-means: " << res << ' ' << end - start << std::endl;
-
-    // start = now();
-    // loop_max();
-    // end = now();
-    // std::cout << "loop max: " << end - start << std::endl;
-
-    // start = now();
-    // loop_kmeans();
-    // end = now();
-    // std::cout << "loop k-means: " << end - start << std::endl;
 }
 
 
 int main(int argc, char *argv[]) {
 	int ret;
 	
-	if (argc != 3) {
+	if (argc < 3) {
 		std::cerr << "usage: [config_file] [work_spec]"
               << std::endl;
 		return -EINVAL;
 	}
 
+    constant = atoi(argv[3]);
+    printf("constant: %d\n", constant);
+    
     std::string task_spec = std::string(argv[2]);
 	parse(task_spec);
 	ret = runtime_init(argv[1], MainHandler_local, NULL);
