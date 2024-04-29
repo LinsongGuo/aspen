@@ -1,3 +1,11 @@
+extern "C" {
+#include <base/byteorder.h>
+#include <base/log.h>
+#include <runtime/runtime.h>
+#include <runtime/udp.h>
+#include <runtime/uintr.h>
+}
+
 #include <chrono>
 #include <iostream>
 #include <sstream>
@@ -17,12 +25,6 @@
 #include <DataFrame/Utils/DateTime.h>              // Cool and handy date-time object
 
 
-// long long now() {
-// 	struct timespec ts;
-// 	timespec_get(&ts, TIME_UTC);
-// 	return ts.tv_sec * 1e9 + ts.tv_nsec;
-// }
-
 // DataFrame library is entirely under hmdf name-space
 using namespace hmdf;
 
@@ -35,8 +37,15 @@ using StrDataFrame = StdDataFrame<std::string>;
 // A DataFrame with DateTime index type
 using DTDataFrame = StdDataFrame<DateTime>;
 
+struct Payload {
+  uint32_t id;
+  uint32_t req_type;
+  uint32_t reqsize;
+  uint32_t run_ns;
+};
+static netaddr listen_addr;
 
-barrier_t barrier;
+// barrier_t barrier;
 
 DTDataFrame ibm_dt_df;
 
@@ -66,41 +75,115 @@ double do_max() {
 }
 
 double do_kmeans() {
-    KMeansVisitor<4, double, DateTime>  kmeans_v { 1000 };  // Iterate at most 1000 times.
+    KMeansVisitor<4, double, DateTime>  kmeans_v { 10 };  // Iterate at most 1000 times.
     ibm_dt_df.single_act_visit<double>("IBM_Return", kmeans_v);
     const auto &cluster_means = kmeans_v.get_result();
-    return cluster_means[0];
+    double res = cluster_means[0];
+    // assert (fabs(res - 0.008) < 0.01);
+    return res;
 }
 
 double do_decom() {
-    DecomposeVisitor<double, DateTime>  decom { 170, 0.1, 0.01 };
+    DecomposeVisitor<double, DateTime>  decom { 170, 0.01, 1 };
+    // preempt_disable();
     ibm_dt_df.single_act_visit<double>("IBM_Return", decom);
-    return decom.get_seasonal()[1000];
+    // preempt_enable();
+    return decom.get_seasonal()[2000];
 }
 
 double do_decay() {
     DecayVisitor<double, DateTime>  decay(5, true);
     ibm_dt_df.single_act_visit<double>("IBM_Close", decay);
-    return decay.get_result()[1000];
+    double res = decay.get_result()[2000];
+    // assert (fabs(res - 124.913) < 0.01);
+    return res;
 }
 
 double do_ad() {
     AccumDistVisitor<double, DateTime>  ad;
     ibm_dt_df.single_act_visit<double, double, double, double, long>("IBM_Low", "IBM_High", "IBM_Open", "IBM_Close", "IBM_Volume", ad);
-    return ad.get_result()[1000];
+    double res = ad.get_result()[2000];
+    // assert (fabs(res - 941602377.791) < 0.01);
+    return res;
 }
 
 double do_ppo() {
-    PercentPriceOSCIVisitor<double, DateTime>  ppo;
+    PercentPriceOSCIVisitor<double, DateTime>  ppo(5, 9, 4);
     ibm_dt_df.single_act_visit<double>("IBM_Close", ppo);
-    return ppo.get_result()[1000];
+    double res = ppo.get_result()[2000];
+    // assert (fabs(res + 0.239) < 0.01);
+    return res;
 }
 
-int constant;
 double do_rmv() {
-    RollingMidValueVisitor<double, DateTime>  rmv (constant);
+    RollingMidValueVisitor<double, DateTime>  rmv (15);
     ibm_dt_df.single_act_visit<double, double>("IBM_Low", "IBM_High", rmv);
-    return rmv.get_result()[1000];
+    double res = rmv.get_result()[2000];
+    // assert (fabs(res - 123.030) < 0.01);
+    return res;
+}
+
+static void HandleRequest(udp_spawn_data *d) {
+    const Payload *p = static_cast<const Payload *>(d->buf);
+    
+    uint32_t res = 0;
+    if (p->req_type == 1) { // req1 : decay
+        res = (uint32_t) do_decay();
+    } else if (p->req_type == 2) { // req2: ad
+        res = (uint32_t) do_ad();
+    } else if (p->req_type == 3) { // req3: rmv
+        res = (uint32_t) do_rmv();
+    } else if (p->req_type == 4) {
+        res = (uint32_t) do_ppo(); // req4: ppo
+    } else if (p->req_type == 5) {
+        // res = (uint32_t) do_decom(); // req5: decom
+        res = (uint32_t) do_kmeans(); // req5: kmeans
+    } else {
+        panic("bad req type %u", p->req_type);
+    }
+    
+    Payload rp = *p;
+    rp.run_ns = res;
+
+    ssize_t wret = udp_respond(&rp, sizeof(rp), d);
+    if (unlikely(wret <= 0)) panic("wret");
+    udp_spawn_data_release(d->release_data);
+}
+
+
+static void HandleLoop(udpconn_t *c) {
+    char buf[20];
+	ssize_t ret;
+	struct netaddr addr;
+
+	while (true) {
+		ret = udp_read_from(c, buf, sizeof(Payload), &addr);
+        assert(ret == sizeof(Payload));
+
+        const Payload *p = static_cast<const Payload *>((void*)buf);
+    
+        uint32_t res = 0;
+        if (p->req_type == 1) { // req1 : decay
+            res = (uint32_t) do_decay();
+        } else if (p->req_type == 2) { // req2: ad
+            res = (uint32_t) do_ad();
+        } else if (p->req_type == 3) { // req3: rmv
+            res = (uint32_t) do_rmv();
+        } else if (p->req_type == 4) {
+            res = (uint32_t) do_ppo(); // req4: ppo
+        } else if (p->req_type == 5) {
+            // res = (uint32_t) do_decom(); // req5: decom
+            res = (uint32_t) do_kmeans(); // req5: kmeans
+        } else {
+            panic("bad req type %u", p->req_type);
+        }
+        
+        Payload rp = *p;
+        rp.run_ns = res;
+
+        ret = udp_write_to(c, &rp, sizeof(Payload), &addr);
+        assert(ret == sizeof(Payload));
+	}
 }
 
 const unsigned N = 1000;
@@ -167,8 +250,11 @@ double loop_rmv() {
 
 typedef double (*task_type)(void);
 const unsigned TASK_NUM = 7;
-std::string task_name_options[TASK_NUM] = {"max", "kmeans", "decom", "ad", "ppo", "decay", "rmv"};
-task_type task_ptr_options[TASK_NUM] = {loop_max, loop_kmeans, loop_decom, loop_ad, loop_ppo, loop_decay, loop_rmv};
+// std::string task_name_options[TASK_NUM] = {"max", "kmeans", "ad", "ppo", "decay", "rmv"};
+// task_type task_ptr_options[TASK_NUM] = {loop_max, loop_kmeans, loop_ad, loop_ppo, loop_decay, loop_rmv};
+std::string task_name_options[TASK_NUM] = {"max", "kmeans", "ad", "ppo", "decay", "rmv", "decom"};
+task_type task_ptr_options[TASK_NUM] = {loop_max, loop_kmeans, loop_ad, loop_ppo, loop_decay, loop_rmv, loop_decom};
+// task_type task_ptr_options[TASK_NUM] = {do_max, do_kmeans, do_ad, do_ppo, do_decay, do_rmv, do_decom};
 unsigned task_num = 0;
 std::string task_name[10];
 task_type task_ptr[10];
@@ -201,10 +287,49 @@ void parse(std::string input) {
 	std::cout << std::endl;
 }
 
+void MainHandler(void *arg) {
+    init();
+
+    rt::UintrTimerStart();
+
+    udpspawner_t *s;
+    int ret = udp_create_spawner(listen_addr, HandleRequest, &s);
+    if (ret) panic("ret %d", ret);
+
+    rt::WaitGroup w(1);
+    w.Wait();
+}
+
+unsigned num_port, num_conn;
+void MainHandler_udpconn(void *arg) {
+    init();
+
+    rt::UintrTimerStart();
+    
+    for (unsigned port = 0; port < num_port; ++port) {
+        udpconn_t *c;
+        ssize_t ret;
+        listen_addr.port = 5000 + port;
+        ret = udp_listen(listen_addr, &c);
+        if (ret) {
+            log_err("stat: udp_listen failed, ret = %ld", ret);
+            return;
+        }
+        
+        for (unsigned i = 0; i < num_conn; ++i) {
+            rt::Spawn([&, c]() {
+                HandleLoop(c);
+            });
+        }
+    }
+
+    rt::WaitGroup w(1);
+    w.Wait();
+}
 
 void MainHandler_local(void *arg) {	
     rt::WaitGroup wg(task_num);
-	barrier_init(&barrier, 1);
+	// barrier_init(&barrier, 1);
 		
     init();
 
@@ -228,7 +353,8 @@ void MainHandler_local(void *arg) {
 
     std::cout << "Results: ";
     for (unsigned i = 0; i < task_num; ++i) {
-        std::cout << results[i] << ' ';
+        // std::cout << results[i] << ' ';
+        printf("%.4f ", results[i]);
     }
     std::cout << std::endl;
 	
@@ -242,22 +368,40 @@ int main(int argc, char *argv[]) {
 	int ret;
 	
 	if (argc < 3) {
-		std::cerr << "usage: [config_file] [work_spec]"
+		std::cerr << "usage: [config_file] [mode=local|udp|udpconn]"
               << std::endl;
 		return -EINVAL;
 	}
 
-    constant = atoi(argv[3]);
-    printf("constant: %d\n", constant);
-    
-    std::string task_spec = std::string(argv[2]);
-	parse(task_spec);
-	ret = runtime_init(argv[1], MainHandler_local, NULL);
+    std::string mode = argv[2];
+    if (mode == "local") {
+        if (argc < 4) {
+            std::cerr << "usage: [cfg_file] local [task_spec]" << std::endl;
+            return -EINVAL;
+        }
+        std::string task_spec = std::string(argv[3]);
+        parse(task_spec);
+        ret = runtime_init(argv[1], MainHandler_local, NULL);
+    } else if (mode == "udp") {
+        listen_addr.port = 5000;
+        ret = runtime_init(argv[1], MainHandler, NULL);
+    } else if (mode == "udpconn") {
+        if (argc < 5) {
+            std::cerr << "usage: [cfg_file] udpconn [num of ports] [num of connections]" << std::endl;
+            return -EINVAL;
+        }
+        listen_addr.port = 5000;
+        num_port = atoi(argv[3]);
+        num_conn = atoi(argv[4]);
+        ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
+    } else {
+        panic ("wrong runtime mode!");
+    }
 
-	if (ret) {
+    if (ret) {
 		printf("failed to start runtime\n");
 		return ret;
 	}
-	
+
 	return 0;
 }

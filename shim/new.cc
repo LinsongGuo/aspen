@@ -22,6 +22,16 @@ void* operator new(size_t sz) {
     return res;
 }
 
+void* operator new(std::size_t size, std::align_val_t alignment) {
+    // Allocate memory with the requested alignment
+    void* ptr;
+    if (posix_memalign(&ptr, static_cast<std::size_t>(alignment), size) != 0) {
+        throw std::bad_alloc();
+    }
+    // printf("new_align: %p\n", ptr);
+    return ptr;
+}
+
 void* operator new[](size_t sz) {
     return ::operator new(sz);
 }

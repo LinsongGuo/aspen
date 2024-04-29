@@ -144,7 +144,7 @@ void __attribute__ ((interrupt))
 }
 
 void signal_handler(int signum) {
-    // uintr_recv[myk()->kthread_idx]++;
+    uintr_recv[myk()->kthread_idx]++;
         
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (!preempt_enabled()) {
@@ -302,6 +302,7 @@ void* uintr_timer(void*) {
     return NULL;
 }
 
+/*
 #ifdef SIGNAL_PREEMPT
 void* signal_timer2(void*) {
     signal_block();
@@ -311,12 +312,12 @@ void* signal_timer2(void*) {
     int i;
     long long current;
     for (i = (maxks>>1); i < maxks; ++i) {
-    // for (i = maxks/3; i < maxks/3*2; ++i) {
+    for (i = maxks/3; i < maxks/3*2; ++i) {
         ACCESS_ONCE(last[i]) = rdtsc();
     }
     while (uintr_timer_flag != -1) {
         for (i = (maxks>>1); i < maxks; ++i) {
-        // for (i = maxks/3; i < maxks/3*2; ++i) {
+        for (i = maxks/3; i < maxks/3*2; ++i) {
             current = rdtsc();
 		
             if (!uintr_timer_flag) {
@@ -325,7 +326,6 @@ void* signal_timer2(void*) {
             }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
                 if (pending_uthreads(i) || pending_cqe(i)) {
-                    //printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
                     pthread_kill(kth_tid[i], SIGUSR1);
                     ++uintr_sent[i];
                     ACCESS_ONCE(last[i]) = current;
@@ -357,7 +357,6 @@ void* signal_timer3(void*) {
             }   
             if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
                 if (pending_uthreads(i) || pending_cqe(i)) {
-                    //printf("kill %d (%d): %lld | %lld, %lld\n", i, kth_tid[i], current - ACCESS_ONCE(last[i]), uintr_sent[i], uintr_recv[i]);
                     pthread_kill(kth_tid[i], SIGUSR1);
                     ++uintr_sent[i];
                     ACCESS_ONCE(last[i]) = current;
@@ -369,6 +368,7 @@ void* signal_timer3(void*) {
     return NULL;
 }
 #endif 
+*/
 
 void uintr_timer_start() {
 	uintr_timer_flag = 1;

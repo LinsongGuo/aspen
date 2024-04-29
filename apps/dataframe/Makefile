@@ -10,7 +10,7 @@ LLC=llc-11
 
 librt_libs = $(ROOT_PATH)/bindings/cc/librt++.a
 INC += -I$(ROOT_PATH)/bindings/cc
-LIBS += -lgflags -lsnappy -lz -llz4 -lpthread -ljemalloc
+# LIBS += -lgflags -lsnappy -lz -llz4 -lpthread -ljemalloc
 lib_shim = $(ROOT_PATH)/shim/libshim.a
 
 INC += -IDataFrame/include
@@ -33,6 +33,8 @@ dep = $(main_src:.cc=.d)
 
 CFLAGS := $(filter-out -muintr, $(CFLAGS))
 CXXFLAGS := $(filter-out -muintr, $(CXXFLAGS))
+# CFLAGS := $(filter-out -DNDEBUG, $(CFLAGS))
+# CXXFLAGS := $(filter-out -DNDEBUG, $(CXXFLAGS))
 
 PASS_FLAGS = -c -emit-llvm
 

@@ -344,7 +344,8 @@ static void merge_preempted_runqueues(struct kthread *l, uint32_t lsize, struct 
 
 	/* merge together two queues of threads sorted by ready_tsc */
 	for (i = 0; i < lsize + rsize; i++) {
-		if (cur_r && (!cur_l || cur_r->ready_tsc < cur_l->ready_tsc)) {
+		// if (cur_r && (!cur_l || cur_r->ready_tsc < cur_l->ready_tsc)) {
+		if (cur_r) {
 			th = cur_r;
 			cur_r = list_pop(&r_ths, thread_t, link);
 		} else {

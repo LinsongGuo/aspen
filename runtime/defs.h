@@ -138,6 +138,7 @@ struct thread_tf {
 	uint64_t xmm15[2] __attribute__((aligned(16)));
 
 #elif defined(UNSAFE_PREEMPT_SIMDREG_512)
+	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	uint64_t k1;
 	uint64_t k2;
 	uint64_t k3;
@@ -179,6 +180,7 @@ struct thread_tf {
 	uint64_t zmm29[4] __attribute__((aligned(64)));
 	uint64_t zmm30[4] __attribute__((aligned(64)));
 	uint64_t zmm31[4] __attribute__((aligned(64)));
+	#endif
 	
 #elif defined(UNSAFE_PREEMPT_SIMDREG)
 	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
@@ -227,7 +229,8 @@ struct thread_tf {
 	uint64_t ymm30[4] __attribute__((aligned(32)));
 	uint64_t ymm31[4] __attribute__((aligned(32)));
 	#elif defined(USE_XSAVE)
-	unsigned char* xsave_area[11008 + 64];
+	// unsigned char* xsave_area[11008 + 64];
+	unsigned char* xsave_area[2432 + 64];
 	#endif
 #endif 
 };

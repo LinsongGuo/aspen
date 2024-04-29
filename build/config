@@ -15,7 +15,7 @@ CONFIG_DIRECTPATH=y
 # Build with clang instead of gcc
 CONFIG_CLANG=n
 # unsafe preemption option 
-CONFIG_UNSAFE_PREEMPT=simdreg
+CONFIG_UNSAFE_PREEMPT=simdreg_512
 # preemption mechanism: signal or uintr
 CONFIG_PREEMPT=uintr
 # only use general-purpose registers or not
@@ -23,6 +23,6 @@ CONFIG_GPR_ONLY=n
 # do you want to use Xsave to save extended registers
 CONFIG_USE_XSAVE=n
 # do you want to enable smart preemption policy
-CONFIG_SMART_PREEMPT=n
+CONFIG_SMART_PREEMPT=y
 # do you want to have a separate runqueue for preempted uthreads
-CONFIG_PREEMPTED_RQ=n
+CONFIG_PREEMPTED_RQ=y
