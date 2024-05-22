@@ -75,6 +75,7 @@ endif
 	$(CXX) $(CXXFLAGS) $(PASS_FLAGS) $< -o $@
 
 %_concord.bc: %.cc
+# $(CXX) $(CXXFLAGS) $(PASS_FLAGS) $< -o $@
 	$(CXX) $(CXXFLAGS) $(PASS_FLAGS) -DCONCORD_UNROLL $< -o $@
 
 .PHONY: clean

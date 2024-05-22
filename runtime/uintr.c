@@ -47,8 +47,8 @@ volatile int uintr_timer_flag = 0;
 volatile int *cpu_preempt_points[MAX_KTHREADS];
 __thread int concord_preempt_now;
 
-uint64_t TIMESLICE = 1000000;
-uint64_t HARD_TIMESLICE = 1000000;
+long long TIMESLICE = 1000000;
+long long HARD_TIMESLICE = 1000000;
 long long start, end;
 
 void concord_func() {
@@ -165,15 +165,6 @@ void signal_handler(int signum) {
 #endif
 }
 
-// bool pending_uthreads(int kidx) {
-// // #ifdef DIRECTPATH
-//     // return ACCESS_ONCE(ks[kidx]->rq_tail) != ACCESS_ONCE(ks[kidx]->rq_head);
-//     return ACCESS_ONCE(ks[kidx]->q_ptrs->rq_tail) != ACCESS_ONCE(ks[kidx]->q_ptrs->rq_head);
-// // #else
-// //     return true;
-// // #endif
-// }
-
 bool pending_cqe(int kidx) {
 #ifdef DIRECTPATH
     return mlx5_rxq_pending(&rxqs[kidx]);
@@ -182,28 +173,13 @@ bool pending_cqe(int kidx) {
 #endif
 }
 
-// bool has_new_tasks(kidx) {
-//     return pending_uthreads(kidx) || pending_cqe(kidx);
-// }
-
-// #ifdef PREEMPTED_RQ
-// inline bool has_old_tasks(int kidx) {
-// //     return ACCESS_ONCE(ks[kidx]->preempted_rq_tail) != ACCESS_ONCE(ks[kidx]->preempted_rq_head);
-//     return ACCESS_ONCE(ks[kidx]->q_ptrs->preempted_rq_tail) != ACCESS_ONCE(ks[kidx]->q_ptrs->preempted_rq_head);
-// }
-// #endif
-
 #define pending_uthreads(i) (ACCESS_ONCE(ks[i]->q_ptrs->rq_tail) != ACCESS_ONCE(ks[i]->q_ptrs->rq_head))
 #define has_new_tasks(i) (pending_uthreads(i) || pending_cqe(i))
 #ifdef PREEMPTED_RQ
 #define has_old_tasks(i) (ACCESS_ONCE(ks[i]->q_ptrs->preempted_rq_tail) != ACCESS_ONCE(ks[i]->q_ptrs->preempted_rq_head))
 #endif
 
-uint64_t last_check[MAX_KTHREADS], last_preempt[MAX_KTHREADS];
-
-// void uintr_timer_upd(int kidx) {
-//     ACCESS_ONCE(last[kidx]) = rdtsc();
-// }
+long long last_check[MAX_KTHREADS], last_preempt[MAX_KTHREADS];
 
 void* uintr_timer(void*) {
     _clui();
@@ -229,13 +205,14 @@ void* uintr_timer(void*) {
 #endif
 
     long long current;
-#ifdef SIGNAL_PREEMPT
-    // for (i = 0; i < (maxks >> 1); ++i) {
-    // for (i = 0; i < maxks/3; ++i) {
+
+#ifdef TIMER_LOG
+#define ONE_SEC 1000000000
+#define RUNTIME_GHZ 2
+    long long last_log = rdtsc();
+#endif
+
     for (i = 0; i < maxks; ++i) {
-#else 
-    for (i = 0; i < maxks; ++i) {
-#endif 
         #ifdef PREEMPTED_RQ
         last_preempt[i] = rdtsc();
         #endif
@@ -243,14 +220,7 @@ void* uintr_timer(void*) {
     }
 
     while (uintr_timer_flag != -1) { 
-#ifdef SIGNAL_PREEMPT
-        // for (i = 0; i < (maxks >> 1); ++i) {
-        // for (i = 0; i < maxks/3; ++i) {
         for (i = 0; i < maxks; ++i) {
-#else 
-        for (i = 0; i < maxks; ++i) {
-#endif      
-            current = rdtsc();
             if (!uintr_timer_flag) {
                 #ifdef PREEMPTED_RQ
                 last_preempt[i] = current;
@@ -259,7 +229,7 @@ void* uintr_timer(void*) {
                 continue;
             }
             
-            uint64_t start_ts = ACCESS_ONCE(ks[i]->uthread_start_ts);
+            long long start_ts = ACCESS_ONCE(ks[i]->uthread_start_ts);
             if (last_check[i] < start_ts) {
                 // log_info("============ last_check: %llu", start_ts - last_check[i]);
                 #ifdef PREEMPTED_RQ
@@ -268,9 +238,13 @@ void* uintr_timer(void*) {
                 last_check[i] = start_ts;
             }
 
+            current = rdtsc();
             if (current - last_check[i] < TIMESLICE)
                 continue;
             last_check[i] = current;    
+
+            // if ( ks[i]->q_ptrs->rq_head != ks[i]->q_ptrs->rq_tail) //  && i >= 8 && i <= 19)
+            // fprintf(stderr, "kthread %d: %d / %d rq\n", i, (long long) ks[i]->rq_head - (long long) ks[i]->rq_tail, (long long) ks[i]->q_ptrs->rq_head - (long long) ks[i]->q_ptrs->rq_tail);
 
             #ifdef PREEMPTED_RQ
             long task_type = ACCESS_ONCE(ks[i]->is_preempted);
@@ -297,78 +271,36 @@ void* uintr_timer(void*) {
             #endif
           
         }
-    } 
 
-    return NULL;
-}
-
-/*
-#ifdef SIGNAL_PREEMPT
-void* signal_timer2(void*) {
-    signal_block();
-
-    set_thread_affinity(53);
-    
-    int i;
-    long long current;
-    for (i = (maxks>>1); i < maxks; ++i) {
-    for (i = maxks/3; i < maxks/3*2; ++i) {
-        ACCESS_ONCE(last[i]) = rdtsc();
-    }
-    while (uintr_timer_flag != -1) {
-        for (i = (maxks>>1); i < maxks; ++i) {
-        for (i = maxks/3; i < maxks/3*2; ++i) {
-            current = rdtsc();
-		
-            if (!uintr_timer_flag) {
-                ACCESS_ONCE(last[i]) = current;
-                continue;
-            }   
-            if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
-                if (pending_uthreads(i) || pending_cqe(i)) {
-                    pthread_kill(kth_tid[i], SIGUSR1);
-                    ++uintr_sent[i];
-                    ACCESS_ONCE(last[i]) = current;
+#ifdef TIMER_LOG
+        current = rdtsc();
+        if (unlikely(current - last_log > ONE_SEC * RUNTIME_GHZ)) {
+            fprintf(stderr, "====== Timer log starts ====== \n");
+            long long all_recv = 0;
+            double avg_quantum = 0;
+            for (i = 0; i < maxks; ++i) {
+                avg_quantum = 0;
+                if (uintr_recv[i] > 0) {
+                    avg_quantum = 1. * ONE_SEC / 1000 / uintr_recv[i];
                 }
-            }   
+                fprintf(stderr, "kthread %d: %lld sent, %lld recv, %.1f us quantum\n", i, uintr_sent[i], uintr_recv[i], avg_quantum);
+                all_recv += uintr_recv[i];
+                uintr_sent[i] = 0;
+                uintr_recv[i] = 0;
+            }
+
+            avg_quantum = 0;
+            if (all_recv > 0) {
+                avg_quantum = 1. * maxks * ONE_SEC / 1000 / all_recv;
+            }
+            fprintf(stderr, "all kthreads: %.1f us quantum\n", avg_quantum);
+            last_log = current;
         }
+#endif
     } 
 
     return NULL;
 }
-
-void* signal_timer3(void*) {
-    signal_block();
-
-    set_thread_affinity(1);
-    
-    int i;
-    long long current;
-    for (i = maxks/3*2; i < maxks; ++i) {
-        ACCESS_ONCE(last[i]) = rdtsc();
-    }
-    while (uintr_timer_flag != -1) {
-        for (i = maxks/3*2; i < maxks; ++i) {
-            current = rdtsc();
-		
-            if (!uintr_timer_flag) {
-                ACCESS_ONCE(last[i]) = current;
-                continue;
-            }   
-            if (current - ACCESS_ONCE(last[i]) >= TIMESLICE) {
-                if (pending_uthreads(i) || pending_cqe(i)) {
-                    pthread_kill(kth_tid[i], SIGUSR1);
-                    ++uintr_sent[i];
-                    ACCESS_ONCE(last[i]) = current;
-                }
-            }   
-        }
-    } 
-
-    return NULL;
-}
-#endif 
-*/
 
 void uintr_timer_start() {
 	uintr_timer_flag = 1;
@@ -432,18 +364,6 @@ int uintr_init_late(void) {
     int ret = pthread_create(&timer_thread, NULL, uintr_timer, NULL);
 	BUG_ON(ret);
     log_info("UINTR timer pthread creates");
-
-#ifdef SIGNAL_PREEMPT
-    // pthread_t timer_thread2;
-    // int ret2 = pthread_create(&timer_thread2, NULL, signal_timer2, NULL);
-	// BUG_ON(ret2);
-    // log_info("Signal timer pthread2 creates");
-
-    // pthread_t timer_thread3;
-    // int ret3 = pthread_create(&timer_thread3, NULL, signal_timer3, NULL);
-	// BUG_ON(ret3);
-    // log_info("Signal timer pthread3 creates");
-#endif
 
     return 0;
 }
