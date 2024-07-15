@@ -190,6 +190,8 @@ void* uintr_timer(void*) {
 
 #ifdef SIGNAL_PREEMPT
     signal_block();
+#define SIGNAL_ALIGN 1000 * 4 * 2
+    long long last_signal = rdtsc();
 #endif 
 
     int i;
@@ -243,9 +245,6 @@ void* uintr_timer(void*) {
                 continue;
             last_check[i] = current;    
 
-            // if ( ks[i]->q_ptrs->rq_head != ks[i]->q_ptrs->rq_tail) //  && i >= 8 && i <= 19)
-            // fprintf(stderr, "kthread %d: %d / %d rq\n", i, (long long) ks[i]->rq_head - (long long) ks[i]->rq_tail, (long long) ks[i]->q_ptrs->rq_head - (long long) ks[i]->q_ptrs->rq_tail);
-
             #ifdef PREEMPTED_RQ
             long task_type = ACCESS_ONCE(ks[i]->is_preempted);
             if (  (task_type == 0 && (has_new_tasks(i) || has_old_tasks(i))) // a new task is running 
@@ -259,6 +258,8 @@ void* uintr_timer(void*) {
 #elif defined(CONCORD_PREEMPT)
                 *(cpu_preempt_points[i]) = 1;
 #elif defined(SIGNAL_PREEMPT)
+                while (rdtsc() - last_signal < SIGNAL_ALIGN);
+                last_signal = rdtsc();
                 pthread_kill(kth_tid[i], SIGUSR1);
 #endif
                 ++uintr_sent[i];

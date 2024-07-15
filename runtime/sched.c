@@ -396,7 +396,7 @@ static bool steal_work(struct kthread *l, struct kthread *r)
 		num_to_steal = MIN(div_up(rsize - lsize, 2), RUNTIME_RQ_SIZE);
 	if (num_to_steal) {
 		merge_runqueues(l, lsize, r, num_to_steal);
-		// printf("steal unpreempted: %d(%d) %d(%d) %d\n", l->kthread_idx, lsize, r->kthread_idx, rsize, num_to_steal);
+		// printf("steal new: %d(%d) %d(%d) %d\n", l->kthread_idx, lsize, r->kthread_idx, rsize, num_to_steal);
 		return true;
 	}
 
@@ -447,8 +447,6 @@ static __noreturn __noinline void schedule(void)
 	unsigned int start_idx;
 	unsigned int iters = 0;
 	int i, sibling;
-
-	// printf("schedule: %d\n", l->kthread_idx);
 
 	assert_spin_lock_held(&l->lock);
 	assert(l->parked == false);
