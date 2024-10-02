@@ -14,6 +14,10 @@ bench_dep = $(bench_obj:.cc=.o)
 program_src = $(wildcard programs/*.c)
 program_obj = $(patsubst %.c,%.o,$(program_src))
 
+# # For chase:
+# chase_obj = $(wildcard programs/chase.o)
+# program_obj += $(chase_obj)
+
 # For array:
 array_obj = $(wildcard programs/array.o)
 program_obj += $(array_obj)

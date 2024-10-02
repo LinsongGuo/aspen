@@ -176,8 +176,10 @@ long long mcf()
     net.bigM = (long)BIGM;
 
     // strcpy( net.inputfile, argv[1] );
-    strcpy( net.inputfile, "/data/preempt/caladan-uintr/apps/uintr_bench/programs/mcf/data/test/input/inp.in");
-    
+    // strcpy( net.inputfile, "/data/preempt/caladan-uintr/apps/uintr_bench/programs/mcf/data/test/input/inp.in");
+    // strcpy( net.inputfile, "/data/preempt/caladan-uintr/apps/uintr_bench/programs/mcf/data/ref/input/inp.in");
+	strcpy( net.inputfile, "/data/preempt/caladan-uintr/apps/uintr_bench/programs/mcf/data/custom/n20000m200000/input/inp.in");
+
     // long long read_start = now2();
     if( read_min( &net ) )
     {

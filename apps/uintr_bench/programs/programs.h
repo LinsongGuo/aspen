@@ -28,4 +28,7 @@ long long cache_friendly();
 
 long long cache_stripe();
 
+void chase_init();
+long long chase();
+
 #endif // PROGRAMS_H

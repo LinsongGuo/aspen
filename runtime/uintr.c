@@ -120,10 +120,10 @@ void __attribute__ ((interrupt))
      ui_handler(struct __uintr_frame *ui_frame,
 		unsigned long long vector) {
 		
-	++uintr_recv[vector];        
+	// ++uintr_recv[vector];        
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
-       //  ++uintr_recv[vector];
+        ++uintr_recv[vector];
     #ifdef PREEMPTED_RQ
      	thread_preempt_yield();
     #else
@@ -221,7 +221,8 @@ void* uintr_timer(void*) {
         last_check[i] = rdtsc();
     }
 
-    while (uintr_timer_flag != -1) { 
+    while (uintr_timer_flag != -1) {
+        current = rdtsc();
         for (i = 0; i < maxks; ++i) {
             if (!uintr_timer_flag) {
                 #ifdef PREEMPTED_RQ
@@ -240,6 +241,7 @@ void* uintr_timer(void*) {
                 last_check[i] = start_ts;
             }
 
+            // log_info("diff: %lld - %lld = %lld %lld", current, last_check[i], current - last_check[i], TIMESLICE);
             current = rdtsc();
             if (current - last_check[i] < TIMESLICE)
                 continue;
@@ -304,8 +306,8 @@ void* uintr_timer(void*) {
 }
 
 void uintr_timer_start() {
-	uintr_timer_flag = 1;
-    start = now();
+    uintr_timer_flag = 1;
+	start = now();
 }
 
 void uintr_timer_end() {

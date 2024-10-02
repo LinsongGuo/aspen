@@ -26,8 +26,8 @@ for task in "${tasks[@]}"; do
         make clean
         make
 
-        echo "run_reg.sh $task $work $mode"
-        ./run_reg.sh $task $work $mode
+        echo "run_reg_xsavec.sh $task $work $mode"
+        ./run_reg_xsavec.sh $task $work $mode
 
         #=====================================================#
         
@@ -41,8 +41,8 @@ for task in "${tasks[@]}"; do
         make clean
         make
 
-        echo "run_reg.sh $task $work $mode"
-        ./run_reg.sh $task $work $mode
+        echo "run_reg_xsavec.sh $task $work $mode"
+        ./run_reg_xsavec.sh $task $work $mode
 
         #=====================================================#
         
@@ -55,8 +55,8 @@ for task in "${tasks[@]}"; do
         make clean
         make
 
-        echo "run_reg.sh $task $work $mode"
-        ./run_reg.sh $task $work $mode
+        echo "run_reg_xsavec.sh $task $work $mode"
+        ./run_reg_xsavec.sh $task $work $mode
 
         #=====================================================#
         
@@ -69,8 +69,8 @@ for task in "${tasks[@]}"; do
         make clean
         make
 
-        echo "run_reg.sh $task $work $mode"
-        ./run_reg.sh $task $work $mode
+        echo "run_reg_xsavec.sh $task $work $mode"
+        ./run_reg_xsavec.sh $task $work $mode
 
 
     done

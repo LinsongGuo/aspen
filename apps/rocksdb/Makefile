@@ -12,7 +12,8 @@ create_db_src = create_db.cc
 create_db_obj = $(create_db_src:.cc=.o)
 
 INC += -Irocksdb/include/rocksdb/
-LIBS += -lgflags -lsnappy -lz -llz4 -lpthread -ljemalloc
+# LIBS += -lgflags -lsnappy -lz -llz4 -lpthread -ljemalloc
+LIBS += -lsnappy -lz -llz4 -lbz2 -lzstd -lpthread -ljemalloc
 lib_rocksdb = rocksdb/librocksdb.a
 lib_shim = $(ROOT_PATH)/shim/libshim.a
 

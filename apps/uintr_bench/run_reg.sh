@@ -1,12 +1,14 @@
 #!/bin/bash
 
 task='mcf'
-num=(8 12 16 20 24 28 32)
+num=(2 4 6 8 12 16 20 24 28 32)
 
 taskpath="reg_results_test/$task/5"
 if [ ! -d "$taskpath" ]; then
     mkdir $taskpath
 fi 
+
+# {69..77}
 
 for n in "${num[@]}"; do
     
@@ -35,7 +37,7 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
 
-    for run in {1..33}; do
+    for run in {69..77}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
 
@@ -56,7 +58,7 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
     
-    for run in {1..33}; do
+    for run in {69..77}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
 
@@ -77,7 +79,7 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
     
-    for run in {1..33}; do
+    for run in {69..77}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
 
@@ -98,7 +100,7 @@ for n in "${num[@]}"; do
         mkdir $modepath
     fi 
 
-    for run in {1..33}; do
+    for run in {69..77}; do
         sudo timeout 200s ./bench ../../server.config $work &>$modepath/$run
     done
 

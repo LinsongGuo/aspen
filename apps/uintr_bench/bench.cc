@@ -21,10 +21,10 @@ namespace {
 
 typedef long long (*bench_type)(void);
 
-const int BENCH_NUM = 12;
+const int BENCH_NUM = 13;
 std::string worker_spec;
-std::string bench_name[BENCH_NUM] = {"mcf", "linpack", "base64", "matmul", "matmul_int", "sum", "array", "cmp", "malloctest", "cache_unfriendly", "cache_friendly", "cache_stripe"};
-bench_type bench_ptr[BENCH_NUM] = {mcf, linpack, base64, matmul, matmul_int, sum, array, cmp, malloctest, cache_unfriendly, cache_friendly, cache_stripe};
+std::string bench_name[BENCH_NUM] = {"chase", "mcf", "linpack", "base64", "matmul", "matmul_int", "sum", "array", "cmp", "malloctest", "cache_unfriendly", "cache_friendly", "cache_stripe"};
+bench_type bench_ptr[BENCH_NUM] = {chase, mcf, linpack, base64, matmul, matmul_int, sum, array, cmp, malloctest, cache_unfriendly, cache_friendly, cache_stripe};
 std::vector<std::string> task_name;
 std::vector<bench_type> task_ptr;
 long long task_result[128];
@@ -91,15 +91,17 @@ void MainHandler(void *arg) {
 	// Init functions for benchmarks.
   	// base64_init();
 	// cmp_init();
-	rt::UintrTimerStart();
-	_stui();
+	chase_init();
 
 	int started = 0, finished = 0;
 	int task_num = task_name.size();
 	for (int i = 0; i < task_num; ++i) {
 		rt::Spawn([&, i]() {
 			// printf("for %d\n", i);
-			// started += 1;
+			if (started == 0) {
+				rt::UintrTimerStart();
+			}
+			started += 1;
     		// printf("===== %s start: %d %d\n", task_name[i].c_str(), i, started);
 			
 			// if (started < task_num) {
@@ -109,6 +111,8 @@ void MainHandler(void *arg) {
 			task_result[i] = task_ptr[i]();
 			finished += 1;
 			if (finished == task_num) {
+				rt::UintrTimerEnd();
+				rt::UintrTimerSummary();
 				wg.Done();
 			}
     	});
@@ -116,14 +120,11 @@ void MainHandler(void *arg) {
 	
 	wg.Wait();
 
-	rt::UintrTimerEnd();
 	printf("results:");
 	for (int t = 0; t < task_num; ++t) {
 		printf(" %lld", task_result[t]);
 	}
 	printf("\n");
-	
-	rt::UintrTimerSummary();
 }
 
 }  // anonymous namespace

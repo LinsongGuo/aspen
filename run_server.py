@@ -388,13 +388,21 @@ def evaluate_policy(path, app):
     # for quantum in [50, 45, 40, 35, 30, 25, 20, 15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]:
     #     run_policy(path, app, 'libpreemptible', 0.25, quantum)
     # run_policy(path, app, 'aspen', 0.25, 4)
+    # run_policy(path, app, 'aspen-noprq-periodic', 0.25, 4)
+    # run_policy(path, app, 'aspen-noprq', 0.25, 4)
     # run_policy(path, app, 'base', 0.25)
 
     # for 5%
     # for quantum in [50, 5, 100, 90, 80, 70, 60, 45, 40, 35, 30, 25, 20, 15, 12, 10, 9, 8, 7, 6, 4, 3, 2, 1]:
     #     run_policy(path, app, 'libpreemptible', 2.0, quantum)
-    run_policy(path, app, 'aspen', 2, 5)
+    # for quantum in [5]:
+    #     run_policy(path, app, 'aspen-noprq-periodic', 2, quantum)
     # run_policy(path, app, 'base', 2)
+
+    # for quantum in [50, 5, 100, 90, 80, 70, 60, 45, 40, 35, 30, 25, 20, 15, 12, 10, 9, 8, 7, 6, 4, 3, 2, 1]:
+    #     run_policy(path, app, 'libpreemptible', 10, quantum)
+    # run_policy(path, app, 'aspen', 10, 8)
+    run_policy(path, app, 'aspen-noprq-periodic', 10, 8)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -404,6 +412,6 @@ if __name__ == '__main__':
     
     if option == 'policy':
         # run_policy('rocksdb_server_log/50', app='rocksdb', system='aspen', mpps=1.5, quantum=5, hard_quantum=200)
-        evaluate_policy('rocksdb_server_log/50', app='rocksdb')
+        evaluate_policy('rocksdb_server_log/5', app='rocksdb')
         runcmd("sudo pkill iokerneld")
         
