@@ -23,8 +23,8 @@ CONFIG_GPR_ONLY=n
 # do you want to use Xsave to save extended registers
 CONFIG_USE_XSAVE=n
 # do you want to enable smart preemption policy
-CONFIG_SMART_PREEMPT=n
+CONFIG_SMART_PREEMPT=y
 # do you want to have a separate runqueue for preempted uthreads
-CONFIG_PREEMPTED_RQ=n
+CONFIG_PREEMPTED_RQ=y
 # do you want the timer to print log
 CONFIG_TIMER_LOG=n

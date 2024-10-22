@@ -247,13 +247,15 @@ void* uintr_timer(void*) {
                 continue;
             last_check[i] = current;    
 
-            #ifdef PREEMPTED_RQ
+#if SMART_PREEMPT
+    #ifdef PREEMPTED_RQ
             long task_type = ACCESS_ONCE(ks[i]->is_preempted);
             if (  (task_type == 0 && (has_new_tasks(i) || has_old_tasks(i))) // a new task is running 
                || (task_type == 1 && (has_new_tasks(i) || (current - last_preempt[i] > HARD_TIMESLICE && has_old_tasks(i)))) ) {
-            #elif SMART_PREEMPT
+    #else 
             if (pending_uthreads(i) || pending_cqe(i)) {
-            #endif
+    #endif
+#endif
 
 #ifdef UINTR_PREEMPT
                 _senduipi(uipi_index[i]);
@@ -265,13 +267,13 @@ void* uintr_timer(void*) {
                 pthread_kill(kth_tid[i], SIGUSR1);
 #endif
                 ++uintr_sent[i];
-            
-            #ifdef PREEMPTED_RQ
+
+#ifdef SMART_PREEMPT        
+    #ifdef PREEMPTED_RQ
                 last_preempt[i] = current;
+    #endif
             }
-            #elif SMART_PREEMPT
-            }
-            #endif
+#endif
           
         }
 
