@@ -89,18 +89,22 @@ void get_test(void* arg) {
     rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
     for (int k = 0; k < N; k++) {
       DoGet(db, readoptions, keys[rand_idx[k]], keys_len[rand_idx[k]]);
-      // DoGet(db, readoptions, dkeys[k], keys_len[k]);
+        rt::Yield();
     }
     rocksdb_readoptions_destroy(readoptions);
   }
+  // uint64_t get_end = rdtsc();
+  // std::cerr << "get end: " << get_end << std::endl;
 }
 
 void scan_test(void* arg) {
-  for (int i = 0; i < 5000; i++) {
+  for (int i = 0; i < 800; i++) {
     rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
     DoScan(db, readoptions);
     rocksdb_readoptions_destroy(readoptions);
   }
+  //   uint64_t scan_end = rdtsc();
+  // std::cerr << "scan end: " << scan_end << std::endl;
 }
 
 void rangescan_front_test(void* arg) {
@@ -292,33 +296,30 @@ void GetScanInit() {
   // fprintf(stderr, "p99.9: %0.3f\n",
   //         (double)durations[i * 999 / 1000] / (double)cycles_per_us);
 
-  // uint16_t durations2[N];  
-  // uint16_t *durations2 = (uint16_t*) malloc(sizeof(uint16_t) * N);
-  // total = 0;
-  // for (i = 0; i < N; i++) {
-  //   int j = rand() % N;
-  //   rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
-  //   uint64_t start = rdtscp(NULL);
-  //   barrier();
-  //   // DoGet(readoptions, j);
-  //   DoGet(db, readoptions, keys[j], keys_len[j]);
-  //   barrier();
-  //   uint64_t end = rdtscp(NULL);
-  //   rocksdb_readoptions_destroy(readoptions);
-  //   durations2[i] = end - start;
-  //   total += end - start;
-  // }
+  uint16_t *durations2 = (uint16_t*) malloc(sizeof(uint16_t) * N);
+  total = 0;
+  for (i = 0; i < N; i++) {
+    int j = rand() % N;
+    rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+    uint64_t start = rdtscp(NULL);
+    barrier();
+    DoGet(db, readoptions, keys[j], keys_len[j]);
+    barrier();
+    uint64_t end = rdtscp(NULL);
+    rocksdb_readoptions_destroy(readoptions);
+    durations2[i] = end - start;
+    total += end - start;
+  }
  
-  // // std::sort(std::begin(durations2), std::end(durations2));
-  // std::sort(durations2, durations2 + N);
-  // fprintf(stderr, "stats for %u Get iterations: \n", i);
-  // fprintf(stderr, "avg: %0.3f\n",
-  //         (double)total / i / (double)cycles_per_us);
-  // fprintf(stderr, "median: %0.3f\n",
-  //         (double)durations2[i / 2] / (double)cycles_per_us);
-  // fprintf(stderr, "p99.9: %0.3f\n",
-  //         (double)durations2[i * 999 / 1000] / (double)cycles_per_us);
-  // free(durations2);
+  std::sort(durations2, durations2 + N);
+  fprintf(stderr, "stats for %u Get iterations: \n", i);
+  fprintf(stderr, "avg: %0.3f\n",
+          (double)total / i / (double)cycles_per_us);
+  fprintf(stderr, "median: %0.3f\n",
+          (double)durations2[i / 2] / (double)cycles_per_us);
+  fprintf(stderr, "p99.9: %0.3f\n",
+          (double)durations2[i * 999 / 1000] / (double)cycles_per_us);
+  free(durations2);
 
   log_info("RocksDB init and warmup ends");
 }
@@ -379,6 +380,11 @@ void MainHandler_local(void *arg) {
     }
   }
 
+  // for (int k = 0; k < N; k += N/10) {
+  //   std::cerr << randpool[0][k] << ' ';
+  // }
+  // std::cerr << std::endl;
+
   int started = 0, finished = 0;
   for (int i = 0; i < task_num; ++i) {
 		rt::Spawn([&, i]() {
@@ -387,9 +393,9 @@ void MainHandler_local(void *arg) {
       }
 
 			started += 1;
-     	if (started < task_num) {
-        rt::Yield();
-			}
+     	// if (started < task_num) {
+      //   rt::Yield();
+			// }
 
       if (task_name[i] == "get")
         task_ptr[i](randpool[--get_num]);

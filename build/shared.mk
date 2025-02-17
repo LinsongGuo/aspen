@@ -140,6 +140,10 @@ ifeq ($(CONFIG_TIMER_LOG), y)
 FLAGS += -DTIMER_LOG
 endif
 
+ifeq ($(CONFIG_PREEMPT_MEASURE), y)
+FLAGS += -DPREEMPT_MEASURE
+endif
+
 WRAP_FLAGS = -Wl,-wrap=malloc -Wl,-wrap=free -Wl,-wrap=realloc -Wl,-wrap=calloc -Wl,-wrap=aligned_alloc -Wl,-wrap=posix_memalign
 ifeq ($(CONFIG_UNSAFE_PREEMPT),flag)
 WRAP_FLAGS += -Wl,-wrap=memcpy -Wl,-wrap=memcmp -Wl,-wrap=memmove -Wl,-wrap=memset -Wl,-wrap=strcmp -Wl,-wrap=strncmp   

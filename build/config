@@ -17,14 +17,16 @@ CONFIG_CLANG=n
 # unsafe preemption option 
 CONFIG_UNSAFE_PREEMPT=simdreg_512
 # preemption mechanism: signal or uintr
-CONFIG_PREEMPT=uintr
+CONFIG_PREEMPT=signal
 # only use general-purpose registers or not
 CONFIG_GPR_ONLY=n
 # do you want to use Xsave to save extended registers
 CONFIG_USE_XSAVE=n
 # do you want to enable smart preemption policy
-CONFIG_SMART_PREEMPT=y
+CONFIG_SMART_PREEMPT=n
 # do you want to have a separate runqueue for preempted uthreads
-CONFIG_PREEMPTED_RQ=y
+CONFIG_PREEMPTED_RQ=n
 # do you want the timer to print log
 CONFIG_TIMER_LOG=n
+# are you measuring the overhead of preemption mechanisms
+CONFIG_PREEMPT_MEASURE=n

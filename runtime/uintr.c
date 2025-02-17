@@ -54,7 +54,8 @@ long long start, end;
 void concord_func() {
     concord_preempt_now = 0;
     uintr_recv[myk()->kthread_idx]++;
-    
+
+#ifndef PREEMPT_MEASURE
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
         // uintr_recv[myk()->kthread_idx]++;
@@ -73,6 +74,7 @@ void concord_func() {
     #else
      	thread_yield();
     #endif
+#endif
 #endif
 }
 
@@ -120,10 +122,12 @@ void __attribute__ ((interrupt))
      ui_handler(struct __uintr_frame *ui_frame,
 		unsigned long long vector) {
 		
-	// ++uintr_recv[vector];        
+	// ++uintr_recv[vector];    
+    uintr_recv[myk()->kthread_idx]++;   
+#ifndef PREEMPT_MEASURE 
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
-        ++uintr_recv[vector];
+        // ++uintr_recv[vector];
     #ifdef PREEMPTED_RQ
      	thread_preempt_yield();
     #else
@@ -141,11 +145,13 @@ void __attribute__ ((interrupt))
      	thread_yield();
     #endif
 #endif
+#endif
 }
 
 void signal_handler(int signum) {
     uintr_recv[myk()->kthread_idx]++;
-        
+
+#ifndef PREEMPT_MEASURE 
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (!preempt_enabled()) {
 		set_upreempt_needed();
@@ -162,6 +168,7 @@ void signal_handler(int signum) {
     #else
      	thread_yield();
     #endif
+#endif
 #endif
 }
 
@@ -190,8 +197,8 @@ void* uintr_timer(void*) {
 
 #ifdef SIGNAL_PREEMPT
     signal_block();
-#define SIGNAL_ALIGN 1000 * 4 * 2
-    long long last_signal = rdtsc();
+// #define SIGNAL_ALIGN 1000 * 4 * 2
+//     long long last_signal = rdtsc();
 #endif 
 
     int i;
@@ -262,8 +269,8 @@ void* uintr_timer(void*) {
 #elif defined(CONCORD_PREEMPT)
                 *(cpu_preempt_points[i]) = 1;
 #elif defined(SIGNAL_PREEMPT)
-                while (rdtsc() - last_signal < SIGNAL_ALIGN);
-                last_signal = rdtsc();
+                // while (rdtsc() - last_signal < SIGNAL_ALIGN);
+                // last_signal = rdtsc();
                 pthread_kill(kth_tid[i], SIGUSR1);
 #endif
                 ++uintr_sent[i];

@@ -48,9 +48,16 @@ static netaddr listen_addr;
 // barrier_t barrier;
 
 DTDataFrame ibm_dt_df;
+char* df_input;
 
 void init() {
-    ibm_dt_df.read("DataFrame/data/DT_IBM.csv", io_format::csv2);
+    // ibm_dt_df.read("DataFrame/data/DT_IBM.csv", io_format::csv2);
+    std::ifstream file(df_input); 
+    if (!file) {
+        std::cerr << "Error: Unable to open file " << df_input << std::endl;
+        return;
+    }
+    ibm_dt_df.read(file, io_format::csv2);
 
     // First let’s make sure if there are missing data in our important columns, we fill them up.
     ibm_dt_df.fill_missing<double, 4>({ "IBM_Close", "IBM_Open", "IBM_High", "IBM_Low" },
@@ -186,10 +193,10 @@ static void HandleLoop(udpconn_t *c) {
 	}
 }
 
-const unsigned N = 1000;
+const unsigned N = 3000;
 double loop_max() {
     double res;
-    for (unsigned i = 0; i < N * 430; ++i) {
+    for (unsigned i = 0; i < 39000; ++i) {
         res = do_max();
     }
     return res;
@@ -214,8 +221,9 @@ double loop_decom() {
 // std::vector<double> res_vec;
 double loop_ad() {
     double res;
-    for (unsigned i = 0; i < N; ++i) {
+    for (unsigned i = 0; i < 39000; ++i) {
         res = do_ad();
+        rt::Yield();
         // res_vec.push_back(res);
     }
     return res;
@@ -223,7 +231,7 @@ double loop_ad() {
 
 double loop_ppo() {
     double res;
-    for (unsigned i = 0; i < N; ++i) {
+    for (unsigned i = 0; i < 9000; ++i) {
         res = do_ppo();
         // res_vec.push_back(res);
     }
@@ -232,8 +240,9 @@ double loop_ppo() {
 
 double loop_decay() {
     double res;
-    for (unsigned i = 0; i < N; ++i) {
+    for (unsigned i = 0; i < 39000; ++i) {
         res = do_decay();
+        rt::Yield();
         // res_vec.push_back(res);
     }
     return res;
@@ -241,7 +250,7 @@ double loop_decay() {
 
 double loop_rmv() {
     double res;
-    for (unsigned i = 0; i < N; ++i) {
+    for (unsigned i = 0; i < 27000; ++i) {
         res = do_rmv();
         // res_vec.push_back(res);
     }
@@ -367,19 +376,20 @@ void MainHandler_local(void *arg) {
 int main(int argc, char *argv[]) {
 	int ret;
 	
-	if (argc < 3) {
-		std::cerr << "usage: [config_file] [mode=local|udp|udpconn]"
+	if (argc < 4) {
+		std::cerr << "usage: [config_file] [mode=local|udp|udpconn] [input_file]"
               << std::endl;
 		return -EINVAL;
 	}
 
     std::string mode = argv[2];
+    df_input = argv[3];
     if (mode == "local") {
         if (argc < 4) {
-            std::cerr << "usage: [cfg_file] local [task_spec]" << std::endl;
+            std::cerr << "usage: [cfg_file] local [input_file] [task_spec]" << std::endl;
             return -EINVAL;
         }
-        std::string task_spec = std::string(argv[3]);
+        std::string task_spec = std::string(argv[4]);
         parse(task_spec);
         ret = runtime_init(argv[1], MainHandler_local, NULL);
     } else if (mode == "udp") {
@@ -387,12 +397,12 @@ int main(int argc, char *argv[]) {
         ret = runtime_init(argv[1], MainHandler, NULL);
     } else if (mode == "udpconn") {
         if (argc < 5) {
-            std::cerr << "usage: [cfg_file] udpconn [num of ports] [num of connections]" << std::endl;
+            std::cerr << "usage: [cfg_file] udpconn [input_file] [num of ports] [num of connections]" << std::endl;
             return -EINVAL;
         }
         listen_addr.port = 5000;
-        num_port = atoi(argv[3]);
-        num_conn = atoi(argv[4]);
+        num_port = atoi(argv[4]);
+        num_conn = atoi(argv[5]);
         ret = runtime_init(argv[1], MainHandler_udpconn, NULL);
     } else {
         panic ("wrong runtime mode!");
