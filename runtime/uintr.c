@@ -53,7 +53,7 @@ long long start, end;
 
 void concord_func() {
     concord_preempt_now = 0;
-    uintr_recv[myk()->kthread_idx]++;
+    // uintr_recv[myk()->kthread_idx]++;
 
 #ifndef PREEMPT_MEASURE
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
@@ -149,7 +149,7 @@ void __attribute__ ((interrupt))
 }
 
 void signal_handler(int signum) {
-    uintr_recv[myk()->kthread_idx]++;
+    // uintr_recv[myk()->kthread_idx]++;
 
 #ifndef PREEMPT_MEASURE 
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
@@ -271,7 +271,7 @@ void* uintr_timer(void*) {
 #elif defined(SIGNAL_PREEMPT)
                 // while (rdtsc() - last_signal < SIGNAL_ALIGN);
                 // last_signal = rdtsc();
-                pthread_kill(kth_tid[i], SIGUSR1);
+                pthread_kill(ktids[i], SIGUSR1);
 #endif
                 ++uintr_sent[i];
 
@@ -332,14 +332,16 @@ int uintr_init(void) {
 
     TIMESLICE = uthread_quantum_us * 1000 * GHZ;
     HARD_TIMESLICE = uthread_hard_quantum_us * 1000 * GHZ;
-	log_info("quantum: %ld us", TIMESLICE / 1000 / GHZ);
-	log_info("hard quantum: %ld us", HARD_TIMESLICE / 1000 / GHZ);
+	log_info("quantum: %lld us", TIMESLICE / 1000 / GHZ);
+	log_info("hard quantum: %lld us", HARD_TIMESLICE / 1000 / GHZ);
     return 0;
 }
 
 int uintr_init_thread(void) {
     int kth_id = myk()->kthread_idx;
     assert(kth_id >= 0 && kth_id < MAX_KTHREADS);
+
+    ktids[kth_id] = pthread_self();
 
     // For concord:
     concord_preempt_now = 0;

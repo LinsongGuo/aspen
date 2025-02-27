@@ -37,6 +37,8 @@ long long uthread_hard_quantum_us = 0;
 atomic_t runningks;
 /* an array of attached kthreads (@nrks in total) */
 struct kthread *ks[NCPU];
+/* an array of tid for kthreads */
+pthread_t ktids[NCPU];
 /* kernel thread-local data */
 DEFINE_PERTHREAD(struct kthread *, mykthread);
 DEFINE_PERTHREAD(unsigned int, kthread_idx);

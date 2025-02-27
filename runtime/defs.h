@@ -138,7 +138,7 @@ struct thread_tf {
 	uint64_t xmm15[2] __attribute__((aligned(16)));
 
 #elif defined(UNSAFE_PREEMPT_SIMDREG_512)
-	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
+	#if !defined(CONCORD_PREEMPT) && !defined(SIGNAL_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	uint64_t k1;
 	uint64_t k2;
 	uint64_t k3;
@@ -183,7 +183,7 @@ struct thread_tf {
 	#endif
 	
 #elif defined(UNSAFE_PREEMPT_SIMDREG)
-	#if !defined(CONCORD_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
+	#if !defined(CONCORD_PREEMPT) && !defined(SIGNAL_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	/* Mask registers */
 	// uint64_t k0; ko is a hardcoded constant 
 	uint64_t k1;
@@ -670,6 +670,7 @@ extern unsigned int guaranteedks;
 extern long long uthread_quantum_us;
 extern long long uthread_hard_quantum_us;
 extern struct kthread *ks[NCPU];
+extern pthread_t ktids[NCPU];
 extern bool cfg_prio_is_lc;
 extern unsigned int cfg_request_hardware_queues;
 extern uint64_t cfg_ht_punish_us;

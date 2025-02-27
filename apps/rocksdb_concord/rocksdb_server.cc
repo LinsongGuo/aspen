@@ -274,9 +274,9 @@ void PutInit() {
 
 void GetScanInit() {
   unsigned int i = 0;
-  uint64_t durations[1], total = 0;
+  uint64_t durations[10], total = 0;
   
-  for (i = 0; i < 1; i++) {
+  for (i = 0; i < 10; i++) {
     rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
     uint64_t start = rdtscp(NULL);
     barrier();

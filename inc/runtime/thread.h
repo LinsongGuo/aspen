@@ -12,8 +12,6 @@
 struct thread;
 typedef void (*thread_fn_t)(void *arg);
 typedef struct thread thread_t;
-
-extern pthread_t kth_tid[NCPU];
 	
 /*
  * Low-level routines, these are helpful for bindings and synchronization
