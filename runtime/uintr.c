@@ -97,13 +97,6 @@ void signal_block() {
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 }
 
-void signal_unblock(void) {
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR1);
-    pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
-}
-
 void set_thread_affinity(int core) {
 	cpu_set_t mask;
 	CPU_ZERO(&mask);

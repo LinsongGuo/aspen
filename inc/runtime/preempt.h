@@ -14,6 +14,7 @@
 DECLARE_PERTHREAD(unsigned int, preempt_cnt);
 DECLARE_PERTHREAD(unsigned int, upreempt_cnt);
 extern void preempt(void);
+extern void signal_unblock(void);
 
 #ifdef USE_XSAVE
 /* maximum size in bytes needed for xsave */

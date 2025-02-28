@@ -104,6 +104,13 @@ void preempt(void)
 	putk();
 }
 
+void signal_unblock(void) {
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
+}
+
 int preempt_init_thread(void)
 {
 	perthread_store(preempt_cnt, PREEMPT_NOT_PENDING);

@@ -68,6 +68,18 @@ __jmp_thread:
 	subl	$1, %gs:__perthread_preempt_cnt(%rip)
 	jz	1f
 
+	/* call signal_unblock to re-enable the delivery of future signals. */
+	pushq	%rsi
+	pushq	%rdi
+	pushq	%r15
+	movq	%rsp, %r15
+	andq	$0xfffffffffffffff0, %rsp /* ensure correct stack alignment */
+	call	signal_unblock
+	movq	%r15, %rsp /* restore SP */
+	popq	%r15
+	popq	%rdi
+	popq	%rsi
+
 	/* jump into trap frame */
 	jmpq	*%rsi
 	nop
@@ -135,7 +147,7 @@ __jmp_thread_direct:
 	subl	$1, %gs:__perthread_preempt_cnt(%rip)
 	jz	1f
 
-	/* jump into trap frame */
+	/* call signal_unblock to re-enable the delivery of future signals. */
 	pushq	%r8
 	pushq	%rdi
 	pushq	%r15
@@ -146,6 +158,8 @@ __jmp_thread_direct:
 	popq	%r15
 	popq	%rdi
 	popq	%r8
+	
+	/* jump into trap frame */
 	jmpq	*%r8
 	nop
 
@@ -194,6 +208,18 @@ __jmp_runtime:
 	/* jump into runtime function */
 	movq    %rdx, %rsp
 
+	/* call signal_unblock to re-enable the delivery of future signals. */
+	pushq	%rsi
+	pushq	%rdi
+	pushq	%r15
+	movq	%rsp, %r15
+	andq	$0xfffffffffffffff0, %rsp /* ensure correct stack alignment */
+	call	signal_unblock
+	movq	%r15, %rsp /* restore SP */
+	popq	%r15
+	popq	%rdi
+	popq	%rsi
+
 	/* jump into runtime code */
 	jmpq    *%rsi
 
@@ -215,6 +241,16 @@ __jmp_runtime_nosave:
 	/* jump into runtime function */
 	movq    %rsi, %rsp
 	movq	%rdi, %rsi
+
+	/* call signal_unblock to re-enable the delivery of future signals. */
+	pushq	%rsi
+	pushq	%r15
+	movq	%rsp, %r15
+	andq	$0xfffffffffffffff0, %rsp /* ensure correct stack alignment */
+	call	signal_unblock
+	movq	%r15, %rsp /* restore SP */
+	popq	%r15
+	popq	%rsi
 
 	/* jump into runtime code */
 	jmpq    *%rsi
