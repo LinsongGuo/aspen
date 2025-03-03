@@ -17,7 +17,7 @@ CONFIG_CLANG=n
 # unsafe preemption option 
 CONFIG_UNSAFE_PREEMPT=simdreg_512
 # preemption mechanism: signal or uintr
-CONFIG_PREEMPT=signal
+CONFIG_PREEMPT=n
 # only use general-purpose registers or not
 CONFIG_GPR_ONLY=n
 # do you want to use Xsave to save extended registers

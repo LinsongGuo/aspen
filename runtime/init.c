@@ -36,7 +36,9 @@ static const struct init_entry global_init_handlers[] = {
 	GLOBAL_INITIALIZER(sched),
 	GLOBAL_INITIALIZER(preempt),
 	GLOBAL_INITIALIZER(smalloc),
+#ifndef NO_PREEMPT
 	GLOBAL_INITIALIZER(uintr),
+#endif
 
 	/* network stack */
 	GLOBAL_INITIALIZER(net),
@@ -66,7 +68,9 @@ static const struct init_entry thread_init_handlers[] = {
 	THREAD_INITIALIZER(sched),
 	THREAD_INITIALIZER(timer),
 	THREAD_INITIALIZER(smalloc),
+#ifndef NO_PREEMPT
 	THREAD_INITIALIZER(uintr),
+#endif
 
 	/* network stack */
 	THREAD_INITIALIZER(net),
@@ -89,7 +93,9 @@ static const struct init_entry late_init_handlers[] = {
 	LATE_INITIALIZER(directpath),
 
 	/* runtime core */
+#ifndef NO_PREEMPT
 	LATE_INITIALIZER(uintr),
+#endif
 };
 
 static int run_init_handlers(const char *phase,

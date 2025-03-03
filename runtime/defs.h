@@ -73,6 +73,7 @@ struct thread_tf {
 	uint64_t rip;	/* instruction pointer */
 	uint64_t rsp;	/* stack pointer */
 
+#if !defined(NO_PREEMPT) && !defined(CONCORD_PREEMPT) && !defined(SIGNAL_PREEMPT)
 #ifdef UNSAFE_PREEMPT_SIMDREG_CUSTOM
 	uint64_t k1;
 	uint64_t k2;
@@ -107,9 +108,6 @@ struct thread_tf {
 	uint64_t ymm5[4] __attribute__((aligned(32)));
 	uint64_t ymm6[4] __attribute__((aligned(32)));
 	uint64_t ymm7[4] __attribute__((aligned(32)));
-	// uint64_t ymm8[4] __attribute__((aligned(32)));
-	// uint64_t ymm9[4] __attribute__((aligned(32)));
-	// uint64_t ymm10[4] __attribute__((aligned(32)));
 
 #elif defined(UNSAFE_PREEMPT_SIMDREG_SSE)
 	uint64_t k1;
@@ -138,7 +136,7 @@ struct thread_tf {
 	uint64_t xmm15[2] __attribute__((aligned(16)));
 
 #elif defined(UNSAFE_PREEMPT_SIMDREG_512)
-	#if !defined(CONCORD_PREEMPT) && !defined(SIGNAL_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
+	#if && !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	uint64_t k1;
 	uint64_t k2;
 	uint64_t k3;
@@ -183,7 +181,7 @@ struct thread_tf {
 	#endif
 	
 #elif defined(UNSAFE_PREEMPT_SIMDREG)
-	#if !defined(CONCORD_PREEMPT) && !defined(SIGNAL_PREEMPT) && !defined(GPR_ONLY) && !defined(USE_XSAVE)
+	#if !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	/* Mask registers */
 	// uint64_t k0; ko is a hardcoded constant 
 	uint64_t k1;
@@ -229,9 +227,9 @@ struct thread_tf {
 	uint64_t ymm30[4] __attribute__((aligned(32)));
 	uint64_t ymm31[4] __attribute__((aligned(32)));
 	#elif defined(USE_XSAVE)
-	// unsigned char* xsave_area[11008 + 64];
 	unsigned char* xsave_area[2432 + 64];
 	#endif
+#endif
 #endif 
 };
 

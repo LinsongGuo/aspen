@@ -27,12 +27,15 @@ runtime_src = $(wildcard runtime/*.c) $(wildcard runtime/net/*.c)
 runtime_src += $(wildcard runtime/net/directpath/*.c)
 runtime_src += $(wildcard runtime/net/directpath/mlx5/*.c)
 runtime_src += $(wildcard runtime/rpc/*.c)
+
+ifeq ($(CONFIG_PREEMPT),n)
+	runtime_asm = runtime/switch.S
+else
 ifeq ($(CONFIG_PREEMPT),signal)
 	runtime_asm = runtime/switch_signal.S
 else
 	ifeq ($(CONFIG_PREEMPT),concord)
 		runtime_asm = runtime/switch.S
-#		runtime_asm = runtime/switch_simdreg.S
 	else
 		ifeq ($(CONFIG_UNSAFE_PREEMPT),simdreg)
 			ifeq ($(CONFIG_GPR_ONLY),y)
@@ -66,6 +69,7 @@ else
 			endif
 		endif
 	endif
+endif
 endif
 runtime_obj = $(runtime_src:.c=.o) $(runtime_asm:.S=.o)
 

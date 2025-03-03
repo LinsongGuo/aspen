@@ -370,7 +370,7 @@ int uintr_init_late(void) {
     pthread_t timer_thread;
     int ret = pthread_create(&timer_thread, NULL, uintr_timer, NULL);
 	BUG_ON(ret);
-    log_info("UINTR timer pthread creates");
+    log_info("Timer pthread created");
 
     return 0;
 }
