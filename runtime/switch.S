@@ -69,7 +69,6 @@ __jmp_thread:
 	jz	1f
 
 	/* jump into trap frame */
-	STUI
 	jmpq	*%rsi
 	nop
 
@@ -84,7 +83,6 @@ __jmp_thread:
 	popq	%r15
 	popq	%rdi
 	popq	%rsi
-	STUI
 	jmpq	*%rsi
 
 /**
@@ -138,7 +136,6 @@ __jmp_thread_direct:
 	jz	1f
 
 	/* jump into trap frame */
-	STUI
 	jmpq	*%r8
 	nop
 
@@ -153,7 +150,6 @@ __jmp_thread_direct:
 	popq	%r15
 	popq	%rdi
 	popq	%r8
-	STUI
 	jmpq	*%r8
 
 /**

@@ -136,7 +136,7 @@ struct thread_tf {
 	uint64_t xmm15[2] __attribute__((aligned(16)));
 
 #elif defined(UNSAFE_PREEMPT_SIMDREG_512)
-	#if && !defined(GPR_ONLY) && !defined(USE_XSAVE)
+	#if !defined(GPR_ONLY) && !defined(USE_XSAVE)
 	uint64_t k1;
 	uint64_t k2;
 	uint64_t k3;

@@ -16,7 +16,7 @@ CONFIG_DIRECTPATH=y
 CONFIG_CLANG=n
 # unsafe preemption option 
 CONFIG_UNSAFE_PREEMPT=simdreg_512
-# preemption mechanism: signal or uintr
+# preemption mechanism: signal or uintr or concord or n
 CONFIG_PREEMPT=n
 # only use general-purpose registers or not
 CONFIG_GPR_ONLY=n
