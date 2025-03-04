@@ -189,8 +189,6 @@ void* uintr_timer(void*) {
 
 #ifdef SIGNAL_PREEMPT
     signal_block();
-// #define SIGNAL_ALIGN 1000 * 4 * 2
-//     long long last_signal = rdtsc();
 #endif 
 
     int i;
@@ -198,7 +196,6 @@ void* uintr_timer(void*) {
 #ifdef UINTR_PREEMPT
     for (i = 0; i < maxks; ++i) {
         uipi_index[i] = uintr_register_sender(uintr_fd[i], 0);
-        // log_info("uipi_index %d %d", i, uipi_index[i]);
         if (uipi_index[i] < 0) {
             log_err("failure to register uintr sender");
         }
@@ -232,14 +229,12 @@ void* uintr_timer(void*) {
             
             long long start_ts = ACCESS_ONCE(ks[i]->uthread_start_ts);
             if (last_check[i] < start_ts) {
-                // log_info("============ last_check: %llu", start_ts - last_check[i]);
                 #ifdef PREEMPTED_RQ
                 last_preempt[i] = start_ts;
                 #endif
                 last_check[i] = start_ts;
             }
 
-            // log_info("diff: %lld - %lld = %lld %lld", current, last_check[i], current - last_check[i], TIMESLICE);
             current = rdtsc();
             if (current - last_check[i] < TIMESLICE)
                 continue;
@@ -260,8 +255,6 @@ void* uintr_timer(void*) {
 #elif defined(CONCORD_PREEMPT)
                 *(cpu_preempt_points[i]) = 1;
 #elif defined(SIGNAL_PREEMPT)
-                // while (rdtsc() - last_signal < SIGNAL_ALIGN);
-                // last_signal = rdtsc();
                 pthread_kill(ktids[i], SIGUSR1);
 #endif
                 ++uintr_sent[i];

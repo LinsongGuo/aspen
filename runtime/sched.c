@@ -88,10 +88,6 @@ static __noreturn void jmp_thread(thread_t *th)
 			cpu_relax();
 	}
 	th->thread_running = true;
-// #ifdef SMART_PREEMPT
-// 	uintr_timer_upd(myk()->kthread_idx);
-// 	barrier();
-// #endif
 	__jmp_thread(&th->tf);
 }
 
@@ -115,8 +111,6 @@ static void jmp_thread_direct(thread_t *oldth, thread_t *newth)
 			cpu_relax();
 	}
 	newth->thread_running = true;
-	// uintr_timer_upd(myk()->kthread_idx);
-	// barrier();
 	__jmp_thread_direct(&oldth->tf, &newth->tf, &oldth->thread_running);
 }
 
@@ -296,10 +290,8 @@ static uint32_t drain_preempted_threads(struct kthread *k, struct list_head *l, 
 	preempted_rq_tail = k->preempted_rq_tail;
 
 	for (i = 0; i < nr; i++) {
-		// printf("steal tail head: %u %u\n", preempted_rq_tail, preempted_rq_head);
 		if (likely(wraps_lt(preempted_rq_tail, preempted_rq_head))) {
 			th = k->preempted_rq[preempted_rq_tail++ % RUNTIME_RQ_SIZE];
-			// printf("steal th: %x %x\n", th, &th->link);
 		} else {
 			th = list_pop(&k->preempted_rq_overflow, thread_t, link);
 			if (!th)
@@ -311,7 +303,6 @@ static uint32_t drain_preempted_threads(struct kthread *k, struct list_head *l, 
 	if (update_tail) {
 		k->preempted_rq_tail = preempted_rq_tail;
 		ACCESS_ONCE(k->q_ptrs->preempted_rq_tail) += i;
-		// printf("steal others: %d\n", ACCESS_ONCE(k->q_ptrs->preempted_rq_tail));
 	}
 
 	return i;
@@ -361,7 +352,6 @@ static void merge_preempted_runqueues(struct kthread *l, uint32_t lsize, struct 
 	}
 
 	ACCESS_ONCE(l->q_ptrs->preempted_rq_head) += rsize;
-	// printf("be steal: %d\n", ACCESS_ONCE(l->q_ptrs->preempted_rq_head));
 	// update_oldest_tsc(l);
 }
 #endif
@@ -396,7 +386,6 @@ static bool steal_work(struct kthread *l, struct kthread *r)
 		num_to_steal = MIN(div_up(rsize - lsize, 2), RUNTIME_RQ_SIZE);
 	if (num_to_steal) {
 		merge_runqueues(l, lsize, r, num_to_steal);
-		// printf("steal new: %d(%d) %d(%d) %d\n", l->kthread_idx, lsize, r->kthread_idx, rsize, num_to_steal);
 		return true;
 	}
 
@@ -407,10 +396,8 @@ static bool steal_work(struct kthread *l, struct kthread *r)
 		num_to_steal = MIN(div_up(rsize - lsize, 2), RUNTIME_RQ_SIZE);
 	else 
 		num_to_steal = 0;
-	// printf("try to steal preempted: %d %d %d\n", lsize, rsize, num_to_steal);
 	if (num_to_steal) {
 		merge_preempted_runqueues(l, lsize, r, num_to_steal);
-		// printf("steal preempted: %d(%d) %d(%d) %d\n", l->kthread_idx, lsize, r->kthread_idx, rsize, num_to_steal);
 		return true;
 	}
 #endif
@@ -456,9 +443,6 @@ static __noreturn __noinline void schedule(void)
 #endif
 
 	/* detect misuse of preempt disable */
-	// if ((perthread_read(preempt_cnt) & ~PREEMPT_NOT_PENDING) != 1) {
-	// 	printf("misuse:  %d %x\n", perthread_read(preempt_cnt), perthread_read(preempt_cnt));
-	// }
 	BUG_ON((perthread_read(preempt_cnt) & ~PREEMPT_NOT_PENDING) != 1);
 
 	/* unmark busy for the stack of the last uthread */
@@ -576,7 +560,6 @@ again:
 	goto again;
 
 done:
-	// printf("Stestui: %d %d\n", l->kthread_idx, _testui());
 #ifdef PREEMPTED_RQ
 	if (l->rq_head != l->rq_tail) {
 #endif
@@ -596,7 +579,6 @@ done:
 		assert(l->preempted_rq_head != l->preempted_rq_tail);
 		th = l->preempted_rq[l->preempted_rq_tail++ % RUNTIME_RQ_SIZE];
 		ACCESS_ONCE(l->q_ptrs->preempted_rq_tail)++;
-		// printf("Find2: %d\n", l->kthread_idx);
 
 		if (unlikely(!list_empty(&l->preempted_rq_overflow)))
 			drain_preempted_overflow(l);
@@ -636,17 +618,11 @@ static __always_inline void enter_schedule(thread_t *curth)
 	struct kthread *k = myk();
 	thread_t *th;
 	uint64_t now_tsc;
-
-	// printf("enter_schedule: %d\n", k->kthread_idx);
 	
 	assert_preempt_disabled();
 
 	/* prepare current thread for sleeping */
 	curth->last_cpu = k->curr_cpu;
-// uint64_t ss = rdtsc();
-
-	// uint64_t ee = rdtsc();
-    // printf("%llu\n", ee - ss);    
 	spin_lock(&k->lock);
 	now_tsc = rdtsc();
 	
@@ -666,10 +642,6 @@ static __always_inline void enter_schedule(thread_t *curth)
 		jmp_runtime(schedule);
 		return;
 	}
-
-	// if (unlikely(k->rq_head - k->rq_tail > 1)) {
-	// 	log_info("rq: %d on %d", k->rq_head - k->rq_tail, k->kthread_idx);
-	// }
 
 	/* fast path: switch directly to the next uthread */
 	STAT(PROGRAM_CYCLES) += now_tsc - perthread_get_stable(last_tsc);
@@ -731,9 +703,6 @@ static __always_inline void enter_schedule(thread_t *curth)
 	else
 		STAT(REMOTE_RUNS)++;
 	
-	// uintr_timer_upd(myk()->kthread_idx);
-	// barrier();
-	
 	jmp_thread_direct(curth, th);
 }
 
@@ -749,7 +718,6 @@ void thread_park_and_unlock_np(spinlock_t *l)
 	assert_preempt_disabled();
 	assert_spin_lock_held(l);
 	spin_unlock(l);
-	// printf("thread_park_and_unlock_np: %d\n", myk()->kthread_idx);
 	enter_schedule(curth);
 }
 
@@ -1090,7 +1058,6 @@ void thread_preempt_yield(void)
 	preempt_disable();
 	curth->thread_ready = false;
 	thread_preempt_ready(curth);
-	// printf("--- thread_preempt_yield: %d-%d, %d-%d\n", myk()->preempted_rq_tail, myk()->preempted_rq_head,  myk()->q_ptrs->preempted_rq_tail, myk()->q_ptrs->preempted_rq_head);
 	enter_schedule(curth);
 }
 #endif
@@ -1106,10 +1073,8 @@ static __always_inline thread_t *__thread_create(void)
 		preempt_enable();
 		return NULL;
 	}
-	// memset(th, 0, STACK_PTR_SIZE);
 	
 	s = stack_alloc();
-	//printf("stack size: %d %d, %p - %p\n", STACK_PTR_SIZE, RUNTIME_STACK_SIZE, s->usable + STACK_PTR_SIZE, s->usable);
 	if (unlikely(!s)) {
 		tcache_free(perthread_ptr(thread_pt), th);
 		preempt_enable();
@@ -1164,7 +1129,6 @@ thread_t *thread_create(thread_fn_t fn, void *arg)
 thread_t *thread_create_with_buf(thread_fn_t fn, void **buf, size_t buf_len)
 {	
 	preempt_disable();
-	// log_info("thread_create_with_buf starts");
 	void *ptr;
 	thread_t *th = __thread_create();
 	if (unlikely(!th))
@@ -1178,7 +1142,6 @@ thread_t *thread_create_with_buf(thread_fn_t fn, void **buf, size_t buf_len)
 	*buf = ptr;
 	gc_register_thread(th);
 	preempt_enable();
-	// log_info("thread_create_with_buf ends");
 	return th;
 }
 
@@ -1258,8 +1221,6 @@ static __noreturn void schedule_start(void)
 {
 	struct kthread *k = myk();
 
-	// printf("schedule_start: %d\n", k->kthread_idx);
-
 	/*
 	 * force kthread parking (iokernel assumes all kthreads are parked
 	 * initially). Update RCU generation so it stays even after entering
@@ -1269,7 +1230,6 @@ static __noreturn void schedule_start(void)
 		ACCESS_ONCE(k->q_ptrs->oldest_tsc) = UINT64_MAX;
 	ACCESS_ONCE(k->parked) = true;
 	kthread_wait_to_attach();
-	// printf("kthread_wait_to_attach: %d\n", k->kthread_idx);
 	perthread_store(last_tsc, rdtsc());
 	store_release(&k->rcu_gen, 1);
 	ACCESS_ONCE(k->q_ptrs->rcu_gen) = 1;

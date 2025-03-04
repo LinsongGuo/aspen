@@ -20,7 +20,6 @@
 void __mutex_lock(mutex_t *m)
 {
 	thread_t *myth;
-	// log_info("__mutex_lock");
 	bool enabled = preempt_enabled();
 	if (likely(enabled)) {
 		spin_lock_np(&m->waiter_lock);
@@ -413,7 +412,6 @@ void waitgroup_wait(waitgroup_t *wg)
 		return;
 	}
 	list_add_tail(&wg->waiters, &myth->link);
-	// printf("waitgroup_wait: %d\n", myk()->kthread_idx);
 	thread_park_and_unlock_np(&wg->lock);
 }
 

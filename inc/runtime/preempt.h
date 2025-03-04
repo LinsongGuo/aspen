@@ -98,7 +98,6 @@ static inline void preempt_disable(void)
 #endif
 	perthread_incr(preempt_cnt);
 	barrier();
-	// printf("disable\n");
 }
 
 /**
@@ -141,7 +140,6 @@ static inline void preempt_enable(void)
 	asm volatile("subl $1, %%gs:__perthread_preempt_cnt(%%rip)"
 		     : "=@ccz" (zero) :: "memory", "cc");
 
-	// printf("p: %u, u: %u\n", perthread_read(preempt_cnt) & 7, perthread_read(upreempt_cnt) > 0);
 	#ifdef UNSAFE_PREEMPT_CLUI
 		if (likely(preempt_enabled()))
 			_stui();
