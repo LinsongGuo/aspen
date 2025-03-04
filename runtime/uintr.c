@@ -342,7 +342,7 @@ int uintr_init_thread(void) {
 		log_err("failure to register uintr handler");
     }
 
-	int uintr_fd_ = uintr_create_fd(kth_id, 0);
+	int uintr_fd_ = uintr_create_fd(0, 0);
 	if (uintr_fd_ < 0) {
 		log_err("failure to create uintr fd");
     }
