@@ -1166,13 +1166,14 @@ int directpath_init(void)
 	struct ibv_device **dev_list;
 	volatile bool poll_thread_stop = false;
 
-	if (!cfg.vfio_directpath)
-		return 0;
 
 	if (!nic_pci_addr_str) {
 		log_err("please supply the pci address for the nic");
 		return -EINVAL;
 	}
+
+	if (!cfg.vfio_directpath)
+		return 0;
 
 	memset(&vfattr, 0, sizeof(vfattr));
 	vfattr.pci_name = nic_pci_addr_str;

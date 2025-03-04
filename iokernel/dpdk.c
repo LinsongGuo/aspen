@@ -231,8 +231,6 @@ int dpdk_init(void)
 	sprintf(buf, "%d", sched_dp_core);
 	ARGV(buf);
 	ARGV("--socket-mem=128");
-	log_info("##### cfg.vfio_directpath: %d", cfg.vfio_directpath);
-	log_info("##### nic_pci_addr_str: %s", nic_pci_addr_str);
 	if (cfg.vfio_directpath) {
 		ARGV("--vdev=net_tap0");
 		ARGV("--allow");

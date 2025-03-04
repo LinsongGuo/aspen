@@ -115,12 +115,11 @@ void __attribute__ ((interrupt))
      ui_handler(struct __uintr_frame *ui_frame,
 		unsigned long long vector) {
 		
-	// ++uintr_recv[vector];    
-    uintr_recv[myk()->kthread_idx]++;   
+    // uintr_recv[myk()->kthread_idx]++;   
 #ifndef PREEMPT_MEASURE 
 #if defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     if (likely(preempt_enabled())) {
-        // ++uintr_recv[vector];
+        // uintr_recv[myk()->kthread_idx]++;   
     #ifdef PREEMPTED_RQ
      	thread_preempt_yield();
     #else
@@ -186,7 +185,7 @@ void* uintr_timer(void*) {
 
     base_init_thread();
 
-    set_thread_affinity(55);
+    set_thread_affinity(timer_core);
 
 #ifdef SIGNAL_PREEMPT
     signal_block();
@@ -209,8 +208,7 @@ void* uintr_timer(void*) {
     long long current;
 
 #ifdef TIMER_LOG
-#define ONE_SEC 1000000000
-#define RUNTIME_GHZ 2
+#define US_PER_SEC 1000000
     long long last_log = rdtsc();
 #endif
 
@@ -279,14 +277,14 @@ void* uintr_timer(void*) {
 
 #ifdef TIMER_LOG
         current = rdtsc();
-        if (unlikely(current - last_log > ONE_SEC * RUNTIME_GHZ)) {
+        if (unlikely(current - last_log > US_PER_SEC * cycles_per_us)) {
             fprintf(stderr, "====== Timer log starts ====== \n");
             long long all_recv = 0;
             double avg_quantum = 0;
             for (i = 0; i < maxks; ++i) {
                 avg_quantum = 0;
                 if (uintr_recv[i] > 0) {
-                    avg_quantum = 1. * ONE_SEC / 1000 / uintr_recv[i];
+                    avg_quantum = 1. * US_PER_SEC / uintr_recv[i];
                 }
                 fprintf(stderr, "kthread %d: %lld sent, %lld recv, %.1f us quantum\n", i, uintr_sent[i], uintr_recv[i], avg_quantum);
                 all_recv += uintr_recv[i];
@@ -296,7 +294,7 @@ void* uintr_timer(void*) {
 
             avg_quantum = 0;
             if (all_recv > 0) {
-                avg_quantum = 1. * maxks * ONE_SEC / 1000 / all_recv;
+                avg_quantum = 1. * maxks * US_PER_SEC / all_recv;
             }
             fprintf(stderr, "all kthreads: %.1f us quantum\n", avg_quantum);
             last_log = current;
@@ -317,16 +315,15 @@ void uintr_timer_end() {
 	uintr_timer_flag = -1;
 }
 
-#define GHZ 2
 int uintr_init(void) {
     memset(uintr_fd, 0, sizeof(uintr_fd));
     memset(uintr_sent, 0, sizeof(uintr_sent));
     memset(uintr_recv, 0, sizeof(uintr_recv));
 
-    TIMESLICE = uthread_quantum_us * 1000 * GHZ;
-    HARD_TIMESLICE = uthread_hard_quantum_us * 1000 * GHZ;
-	log_info("quantum: %lld us", TIMESLICE / 1000 / GHZ);
-	log_info("hard quantum: %lld us", HARD_TIMESLICE / 1000 / GHZ);
+    TIMESLICE = uthread_quantum_us * cycles_per_us;
+    HARD_TIMESLICE = uthread_hard_quantum_us * cycles_per_us;
+	log_info("quantum: %lld us", TIMESLICE / cycles_per_us);
+	log_info("hard quantum: %lld us", HARD_TIMESLICE / cycles_per_us);
     return 0;
 }
 
@@ -370,7 +367,7 @@ int uintr_init_late(void) {
     pthread_t timer_thread;
     int ret = pthread_create(&timer_thread, NULL, uintr_timer, NULL);
 	BUG_ON(ret);
-    log_info("Timer pthread created");
+    log_info("timer pthread created");
 
     return 0;
 }

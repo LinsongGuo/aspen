@@ -204,6 +204,19 @@ static int parse_runtime_uthread_hard_quantum_us(const char *name, const char *v
 	return 0;
 }
 
+static int parse_runtime_timer_core(const char *name, const char *val)
+{
+	long tmp;
+	int ret;
+
+	ret = str_to_long(val, &tmp);
+	if (ret)
+		return ret;
+
+	timer_core = tmp;
+	return 0;
+}
+
 static int parse_runtime_priority(const char *name, const char *val)
 {
 	if (!strcmp(val, "lc")) {
@@ -432,6 +445,7 @@ static const struct cfg_handler cfg_handlers[] = {
 			false },
 	{ "runtime_uthread_quantum_us", parse_runtime_uthread_quantum_us, false},
 	{ "runtime_uthread_hard_quantum_us", parse_runtime_uthread_hard_quantum_us, false},
+	{ "runtime_timer_core", parse_runtime_timer_core, false},
 	{ "runtime_priority", parse_runtime_priority, false },
 	{ "runtime_ht_punish_us", parse_runtime_ht_punish_us, false },
 	{ "runtime_qdelay_us", parse_runtime_qdelay_us, false },

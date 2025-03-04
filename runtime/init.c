@@ -175,19 +175,6 @@ int runtime_set_initializers(initializer_fn_t global_fn,
  */
 int runtime_init(const char *cfgpath, thread_fn_t main_fn, void *arg)
 {
-	// printf("spinlock_t: %d\n", sizeof(spinlock_t));
-	// printf("struct list_head: %d\n", sizeof(struct list_head));
-	// printf("struct lrpc_chan_in: %d\n", sizeof(struct lrpc_chan_in));
-	// printf("pid_t: %d\n", sizeof(pid_t));
-	// printf("unsigned long: %d\n", sizeof(unsigned long));
-
-	// printf("struct q_ptrs*: %d\n", sizeof(struct q_ptrs*));
-	// printf("struct mbufq: %d\n", sizeof(struct mbufq));
-
-	// printf("struct lrpc_chan_out: %d\n", sizeof(struct lrpc_chan_out));
-	// printf("struct list_head: %d\n", sizeof(struct list_head));
-	// printf("offsetof preempted_rq_tail: %d %d\n", offsetof(struct kthread, preempted_rq_head), offsetof(struct kthread, preempted_rq_tail));
-	// printf("offsetof txpktq: %d\n", offsetof(struct kthread, txpktq));
 	int ret, i;
 
 	ret = ioqueues_init_early();

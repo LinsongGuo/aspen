@@ -31,8 +31,11 @@ unsigned int spinks;
 /* the number of guaranteed kthreads (we can always have this many if we want) */
 unsigned int guaranteedks = 0;
 /* user-level preemption quantum in micro-seconds */
-long long uthread_quantum_us = 0;
-long long uthread_hard_quantum_us = 0;
+long long uthread_quantum_us = 100000000;
+long long uthread_hard_quantum_us = 100000000;
+/* core id of timer core */
+/* TODO: currently, the timer core is not managed by the iokernel and ksched */
+unsigned int timer_core = 55;
 /* the number of active kthreads */
 atomic_t runningks;
 /* an array of attached kthreads (@nrks in total) */
