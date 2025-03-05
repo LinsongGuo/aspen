@@ -377,13 +377,13 @@ int main(int argc, char *argv[]) {
 	int ret;
 	
 	if (argc < 4) {
-		std::cerr << "usage: [config_file] [mode=local|udp|udpconn] [input_file]"
+		std::cerr << "usage: [config_file] [input_file] [mode=local|udp|udpconn]"
               << std::endl;
 		return -EINVAL;
 	}
 
-    std::string mode = argv[2];
-    df_input = argv[3];
+    df_input = argv[2];
+    std::string mode = argv[3];
     if (mode == "local") {
         if (argc < 4) {
             std::cerr << "usage: [cfg_file] local [input_file] [task_spec]" << std::endl;

@@ -10,13 +10,10 @@ LLC=llc-11
 
 librt_libs = $(ROOT_PATH)/bindings/cc/librt++.a
 INC += -I$(ROOT_PATH)/bindings/cc
-# LIBS += -lgflags -lsnappy -lz -llz4 -lpthread -ljemalloc
 lib_shim = $(ROOT_PATH)/shim/libshim.a
 
 INC += -IDataFrame/include
 lib_df = DataFrame/build/lib/libDataFrame.a
-# INC += -IDataFrame_1_19_clang/include
-# lib_df = DataFrame_1_19_clang/build/lib/libDataFrame.a
 
 main_src = main.cc
 main_obj = $(main_src:.cc=.a)
@@ -33,14 +30,12 @@ dep = $(main_src:.cc=.d)
 
 CFLAGS := $(filter-out -muintr, $(CFLAGS))
 CXXFLAGS := $(filter-out -muintr, $(CXXFLAGS))
-# CFLAGS := $(filter-out -DNDEBUG, $(CFLAGS))
-# CXXFLAGS := $(filter-out -DNDEBUG, $(CXXFLAGS))
 
 PASS_FLAGS = -c -emit-llvm
 
 OPT_CONFIG=-postdomtree -mem2reg -indvars -loop-simplify -branch-prob -scalar-evolution 
 CONCORD_PASS=concord/src/cache-line-pass/build/src/libConcordPass.so
-CONCORD_PASS_OPT = -load $(CONCORD_PASS) -yield # -loop_body_size 200
+CONCORD_PASS_OPT = -load $(CONCORD_PASS) -yield
 
 # must be first
 all: main main_concord
@@ -75,8 +70,11 @@ endif
 	$(CXX) $(CXXFLAGS) $(PASS_FLAGS) $< -o $@
 
 %_concord.bc: %.cc
-# $(CXX) $(CXXFLAGS) $(PASS_FLAGS) $< -o $@
+ifeq ($(UNROLL),1)
 	$(CXX) $(CXXFLAGS) $(PASS_FLAGS) -DCONCORD_UNROLL $< -o $@
+else
+	$(CXX) $(CXXFLAGS) $(PASS_FLAGS) $< -o $@
+endif	
 
 .PHONY: clean
 clean:
