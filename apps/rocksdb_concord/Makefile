@@ -26,16 +26,13 @@ ROCKSDB_LIB_CONCORD=rocksdb/librocksdb_concord.a
 ROCKSDB_INCFL=-Irocksdb_func_loop/include/rocksdb/
 ROCKSDB_LIB_CONCORDFL=rocksdb_func_loop/librocksdb_concord.a
 
-ROCKSDB_INCF=-Irocksdb_func/include/rocksdb/
-ROCKSDB_LIB_CONCORDF=rocksdb_func/librocksdb_concord.a
-
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 OPT_CONFIG=-postdomtree -mem2reg -indvars -loop-simplify -branch-prob -scalar-evolution 
 CONCORD_PASS=$(ROOT_DIR)/rocksdb/concord/src/cache-line-pass/build/src/libConcordPass.so
 
 THIRD_LIBS=-lgflags -lsnappy -lz -llz4 -lbz2 -lzstd -lpthread -ljemalloc
 
-all: clean concord-rocksdb rocksdb_server rocksdb_server_concord rocksdb_server_concord_fl rocksdb_server_concord_f
+all: clean concord-rocksdb rocksdb_server rocksdb_server_concord rocksdb_server_concord_fl
 
 concord-rocksdb:
 	$(CC) $(ROCKSDB_INC) $(CFLAGS) $(PASS_FLAGS) concord-rocksdb.c -o $(BENCH).bc
@@ -55,9 +52,6 @@ rocksdb_server_concord:
 rocksdb_server_concord_fl:
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WRAP_FLAGS) $(ROCKSDB_INCFL) $(CALADAN_INC) -o rocksdb_server_concord_fl -ldl rocksdb_server.cc concord_apirocksdb_concord.a $(ROCKSDB_LIB_CONCORDFL) $(lib_shim) $(librt_libs) $(RUNTIME_LIBS) $(THIRD_LIBS)
 
-rocksdb_server_concord_f:
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(WRAP_FLAGS) $(ROCKSDB_INCF) $(CALADAN_INC) -o rocksdb_server_concord_f -ldl rocksdb_server.cc concord_apirocksdb_concord.a $(ROCKSDB_LIB_CONCORDF) $(lib_shim) $(librt_libs) $(RUNTIME_LIBS) $(THIRD_LIBS)
-
 clean:
-	rm -f rocksdb_server rocksdb_server_concord rocksdb_server_concord_fl rocksdb_server_concord_f
+	rm -f rocksdb_server rocksdb_server_concord rocksdb_server_concord_fl
 

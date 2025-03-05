@@ -25,3 +25,7 @@
 [submodule "apps/dataframe/concord"]
 	path = apps/dataframe/concord
 	url = https://github.com/LinsongGuo/concord.git
+[submodule "apps/rocksdb_concord/rocksdb_func_loop"]
+	path = apps/rocksdb_concord/rocksdb_func_loop
+	url = https://github.com/LinsongGuo/rocksdb.git
+	branch = clang-concord_func_loop

@@ -7,4 +7,3 @@ rocksdb_pic
 rocksdb_nopt
 rocksdb_avx_pic
 rocksdb_func
-rocksdb_func_loop
