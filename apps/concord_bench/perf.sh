@@ -1,1 +1,0 @@
-sudo perf stat -C 2 -e cycles:u,cycles:k,instructions:u,instructions:k,branch-misses:u,branch-misses:k,L1-dcache-load-misses:u,L1-dcache-load-misses:k,L1-icache-load-misses:u,L1-icache-load-misses:k $1
