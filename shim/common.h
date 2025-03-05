@@ -25,23 +25,6 @@ static inline void shim_preempt_disable(void)
 		preempt_disable();
 }
 
-// static inline void shim_preempt_uintr_enable(unsigned char uif)
-// {
-// 	if (likely(shim_active())) {
-// 		preempt_enable();
-// 		_stui();
-// 	}
-// }
-
-// static inline void shim_preempt_uintr_disable(unsigned char uif)
-// {
-// 	if (likely(shim_active())) {
-// 		preempt_disable();
-// 		_clui();
-// 	}
-// }
-
-
 static inline void shim_spin_unlock_np(spinlock_t *l)
 {
 	spin_unlock(l);

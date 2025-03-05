@@ -28,35 +28,23 @@ void *__wrap_malloc(size_t size) {
     if (unlikely(!shim_active()))
         return __real_malloc(size);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//  unsigned char uif = _testui();
-//  if (likely(uif))
-//      _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+ unsigned char uif = _testui();
+ if (likely(uif))
+     _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
+#endif
 
-    // printf("malloc\n");
     void *p = NULL;
     p = __real_malloc(size);
     
-    // if (likely(shim_active())) {
-    //     p = smalloc(size);
-    //     printf("smalloc: %p\n", p);
-    // } else {
-    //     p = __real_malloc(size);
-    //     printf("__real_malloc: %p\n", p);
-    // }
-    // void *p = __real_malloc(size);
-
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_enable();
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#endif
 
     return p;
 }
@@ -67,59 +55,44 @@ void __wrap_free(void *ptr) {
         return;
     }
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
+#endif
 
-    // printf("free\n");
     __real_free(ptr);
-    
-    // printf("free: %p\n", ptr);
-    // if (likely(shim_active())) {
-    //     // printf("sfree: %p\n", ptr);
-    //     sfree(ptr);
-    // } else {
-    //     // printf("__real_free: %p\n", ptr);
-    //     __real_free(ptr);
-    // }
-    // __real_free(ptr);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
+    preempt_enable();
+#endif
 }
 
 void *__wrap_calloc(size_t nmemb, size_t size) {
     if (unlikely(!shim_active()))
         return __real_calloc(nmemb, size);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
-    // printf("calloc\n");
+#endif
+
     void *foo = __real_calloc(nmemb, size);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
+    preempt_enable();
+#endif
 
     return foo;
 }
@@ -128,25 +101,22 @@ void *__wrap_realloc(void *ptr, size_t size) {
     if (unlikely(!shim_active()))
         return __real_realloc(ptr, size);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
-
-    // printf("realloc\n");
+#endif
+ 
     void *foo = __real_realloc(ptr, size);
 
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_enable();
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#endif
 
     return foo;
 }
@@ -155,25 +125,22 @@ int __wrap_posix_memalign(void **ptr, size_t alignment, size_t size) {
     if (unlikely(!shim_active()))
         return __real_posix_memalign(ptr, alignment, size);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
+#endif
 
-    // printf("__real_posix_memalign\n");
     int res = __real_posix_memalign(ptr, alignment, size);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -182,25 +149,22 @@ void* __wrap_aligned_alloc(size_t alignment, size_t size) {
     if (unlikely(!shim_active()))
         return __real_aligned_alloc(alignment, size);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
     preempt_disable();
+#endif
 
-    // printf("__wrap_aligned_alloc\n");
     void *res = __real_aligned_alloc(alignment, size);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -210,25 +174,22 @@ void* __wrap_memcpy(void *dest, const void *src, size_t n) {
     if (unlikely(!shim_active()))
         return __real_memcpy(dest, src, n);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
     
-    // printf("__real_memcpy\n");
     void *res = __real_memcpy(dest, src, n);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -237,25 +198,22 @@ int __wrap_memcmp(const void *s1, const void *s2, size_t n) {
     if (unlikely(!shim_active())) 
         return __real_memcmp(s1, s2, n);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
 
-    // printf("__real_memcmp\n");
     int res = __real_memcmp(s1, s2, n);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -264,25 +222,22 @@ void *__wrap_memmove(void *dest, const void *src, size_t n) {
     if (unlikely(!shim_active())) 
         return __real_memmove(dest, src, n);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
 
-    // printf("__real_memmove\n");
     void *res = __real_memmove(dest, src, n);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -291,25 +246,22 @@ void *__wrap_memset(void *s, int c, size_t n) {
     if (unlikely(!shim_active()))
         return __real_memset(s, c, n);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
 
-    // printf("__real_memset\n");
     void *res = __real_memset(s, c, n);
 
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_enable();
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#endif
 
     return res;
 }
@@ -318,25 +270,22 @@ int __wrap_strcmp(const char* str1, const char* str2) {
     if (unlikely(!shim_active())) 
         return __real_strcmp(str1, str2);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
 
-    // printf("__real_strcmp\n");
     int res = __real_strcmp(str1, str2);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
+    preempt_enable();
+#endif
 
     return res;
 }
@@ -345,25 +294,22 @@ int __wrap_strncmp(const char* str1, const char* str2, size_t num) {
     if (unlikely(!shim_active()))   
         return __real_strncmp(str1, str2, num);
 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     unsigned char uif = _testui();
-//     if (likely(uif))
-//         _clui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_disable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    unsigned char uif = _testui();
+    if (likely(uif))
+        _clui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
     preempt_disable();
+#endif
     
-    // printf("__real_strncmp\n");
     int res = __real_strncmp(str1, str2, num);
 
-    preempt_enable(); 
-// #if defined(UNSAFE_PREEMPT_CLUI)
-//     if (likely(uif))
-//         _stui();
-// #elif defined(UNSAFE_PREEMPT_FLAG)
-//     preempt_enable();
-// #endif
+#if defined(UNSAFE_PREEMPT_CLUI)
+    if (likely(uif))
+        _stui();
+#elif defined(UNSAFE_PREEMPT_FLAG)
+    preempt_enable();
+#endif
 
     return res;
 }

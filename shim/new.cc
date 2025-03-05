@@ -5,15 +5,7 @@
 #include <x86intrin.h>
 
 void* operator new(size_t sz) {
-    // printf("new\n");
     void *res = malloc(sz);
-
-    // unsigned char uif = _testui();
-    // if (uif)
-    //     _clui();    
-    // printf("new: %p\n", res);
-    // if (uif)
-    //     _stui();
 
     if (!res) {
         throw std::bad_alloc();
@@ -23,12 +15,10 @@ void* operator new(size_t sz) {
 }
 
 void* operator new(std::size_t size, std::align_val_t alignment) {
-    // Allocate memory with the requested alignment
     void* ptr;
     if (posix_memalign(&ptr, static_cast<std::size_t>(alignment), size) != 0) {
         throw std::bad_alloc();
     }
-    // printf("new_align: %p\n", ptr);
     return ptr;
 }
 
@@ -37,7 +27,6 @@ void* operator new[](size_t sz) {
 }
 
 void operator delete(void *p) {
-    // printf("free\n");
     free(p);
 }
 

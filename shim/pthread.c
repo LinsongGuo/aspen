@@ -6,8 +6,6 @@
 
 #include "common.h"
 
-#include <stdio.h>
-
 BUILD_ASSERT(sizeof(pthread_t) >= sizeof(uintptr_t));
 
 struct join_handle {
@@ -95,95 +93,28 @@ static int thread_join(struct join_handle *j, void **retval)
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 		   void *(*start_routine)(void *), void *arg)
 {
-	// printf("~~~~~~~~~~~~~~ CALL pthread_create\n");
 	NOTSELF(pthread_create, thread, attr, start_routine, arg);
-	
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // unsigned char uif = _testui();
-    // if (likely(uif))
-    //     _clui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_disable();
-#endif
-
-	int res = thread_spawn_joinable((struct join_handle **)thread,
+	return thread_spawn_joinable((struct join_handle **)thread,
 				     start_routine, arg);
-
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // if (likely(uif))
-    //     _stui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_enable();
-#endif
-	return res;
 }
 
 int pthread_detach(pthread_t thread)
 {
 	NOTSELF(pthread_detach, thread);
-	
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // unsigned char uif = _testui();
-    // if (likely(uif))
-    //     _clui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_disable();
-#endif
-
-	int res = thread_detach((struct join_handle *)thread);
-
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // if (likely(uif))
-    //     _stui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_enable();
-#endif
-	return res;
+	return thread_detach((struct join_handle *)thread);
 }
 
 int pthread_join(pthread_t thread, void **retval)
 {
 	NOTSELF(pthread_join, thread, retval);
-	
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // unsigned char uif = _testui();
-    // if (likely(uif))
-    //     _clui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_disable();
-#endif
-
-	int res = thread_join((struct join_handle *)thread, retval);
-
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // if (likely(uif))
-    //     _stui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_enable();
-#endif
-	return res;
+	return thread_join((struct join_handle *)thread, retval);
 }
 
 #if 0
 int pthread_yield(void)
 {
-#if defined(UNSAFE_PREEMPT_CLUI)
-    unsigned char uif = _testui();
-    if (likely(uif))
-        _clui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    preempt_disable();
-#endif
-
 	NOTSELF(pthread_yield);
 	thread_yield();
-
-#if defined(UNSAFE_PREEMPT_CLUI)
-    if (likely(uif))
-        _stui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    preempt_enable();
-#endif
 	return 0;
 }
 #endif
@@ -191,23 +122,6 @@ int pthread_yield(void)
 int sched_yield(void)
 {
 	NOTSELF(sched_yield);
-	
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // unsigned char uif = _testui();
-    // if (likely(uif))
-    //     _clui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_disable();
-#endif
-
 	thread_yield();
-
-#if defined(UNSAFE_PREEMPT_CLUI)
-    // if (likely(uif))
-    //     _stui();
-#elif defined(UNSAFE_PREEMPT_FLAG) || defined(UNSAFE_PREEMPT_SIMDREG)
-    // preempt_enable();
-#endif
 	return 0;
 }
-
