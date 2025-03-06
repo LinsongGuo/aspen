@@ -16,6 +16,7 @@ from datetime import datetime
 ###################################################################################
 
 # You need two machines to run this experiment.
+# Provide SSH connection details to allow the CLIENT to launch processes on the SERVER via SSH.
 CLIENT = ''     # IP address or hostname of the client machine
 SERVER = ''     # IP address or hostname of the server machine
 USERNAME = ''   # Your username for both machines
@@ -110,7 +111,7 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 SCRIPT_PATH = os.path.dirname(SCRIPT_PATH) # Script path
 EXP_PATH = os.path.dirname(SCRIPT_PATH)    # Experiment path
 HOME_PATH = os.path.dirname(EXP_PATH)      # Project home path 
-
+# The results and logs will appear in `experiments/result/fig6`. 
 
 LOGGER = logging.getLogger('experiment')
 logging.basicConfig(format='%(asctime)s: %(message)s', level=logging.DEBUG)
