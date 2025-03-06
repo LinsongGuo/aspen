@@ -29,7 +29,7 @@
 	path = apps/rocksdb_concord/rocksdb_func_loop
 	url = https://github.com/LinsongGuo/rocksdb.git
 	branch = clang-concord_func_loop
-[submodule "aspen-go/go-preempt"]
-	path = aspen-go/go-preempt
+[submodule "aspen-go/go"]
+	path = aspen-go/go
 	url = https://github.com/PLSysSec/go-preempt.git
 	branch = net-optimized
