@@ -33,3 +33,7 @@
 	path = aspen-go/go
 	url = https://github.com/PLSysSec/go-preempt.git
 	branch = net-optimized
+[submodule "aspen-go/badger-bench"]
+	path = aspen-go/badger-bench
+	url = https://github.com/LinsongGuo/badger-bench.git
+	branch = experiment
