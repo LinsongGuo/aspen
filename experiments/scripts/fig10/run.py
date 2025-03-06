@@ -450,7 +450,7 @@ def evaluate(option, client_path, server_path, quantum=5, mpps=2, start_mpps=0, 
         return
 
     # Estimate the time required for all data points to complete
-    wait_time = (samples + 1) * 22
+    wait_time = (samples + 1) * 25
     time.sleep(wait_time)
 
     try:
