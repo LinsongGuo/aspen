@@ -82,6 +82,18 @@ sudo ./iokerneld simple noht nobw
 ./apps/synthetic/target/release/synthetic 192.168.1.100:5000 --config client.config --mode runtime-client
 ```
 
+If everything runs correctly, you should see log outputs on the client side. The logs display latency statistics.
+For example, in the following output, the median latency is 10.0 microseconds:
+```
+Distribution, Target, Actual, Dropped, Never Sent, Median, 90th, 99th, 99.9th, 99.99th, Start, StartTsc
+zero, 995, 995, 0, 7, 10.0, 11.0, 13.0, 16.0, 23.0, 1741676803, 2107778514822687
+zero, 1986, 1986, 0, 10, 10.0, 10.0, 12.0, 16.0, 21.0, 1741676819, 2107809483629783
+zero, 3000, 3000, 0, 24, 10.0, 11.0, 13.0, 16.0, 18.0, 1741676834, 2107840541228215
+zero, 4001, 4001, 0, 38, 10.0, 11.0, 13.0, 17.0, 42.0, 1741676850, 2107871528814095
+zero, 5015, 5015, 0, 52, 10.0, 11.0, 13.0, 17.0, 21.0, 1741676866, 2107902597550367
+zero, 5967, 5967, 0, 54, 10.0, 11.0, 13.0, 17.0, 26.0, 1741676881, 2107933530499259
+```
+
 Explanation of iokerneld parameters: 
 - `simple`: Uses a simplified scheduler policy. 
 Since Aspen does not require Caladan’s methods for addressing CPU interference, this `simple` mode is sufficient for experimentation.
@@ -111,6 +123,18 @@ currently run as root and have a unique IP address.
 This repository (along with its multiple submodules) contains instructions and scripts for running the experiments presented in the paper. The scripts are located in the directory `experiments/scripts`. Within the directory, each subfolder corresponds to a figure from the paper and includes the scripts along with a README explaining how to use them.
 For example, `experiments/scripts/fig5` contains the scripts for the Figure 5 experiment, along with a README.
 
+### Prerequisites
+
+To run all of the following experiments except Figure 1, you need to complete Steps 1, 2, 3, and 5 from [How to Build and Run](#how-to-build-and-run).
+Additionally, to run Figures 1, 5, 6, 8, and 10, you also need to have `clang-11`, `clang++-11` and `opt-11` installed. You can verify their availability by running the following commands:
+
+```sh
+clang-11 --version
+clang++-11 --version
+opt-11 --version
+```
+
+
 ### Benchmarking Study
 
 This study evaluates three preemption mechanisms: signals, compiler instrumentation, and user interrupts.
@@ -126,14 +150,6 @@ This study evaluates preemption mechanisms and policies in a low-overhead, kerne
 - **Figure 5**: RocksDB performance in Aspen-KB under different preemption mechanisms.
 - **Figure 6**: DataFrame performance in Aspen-KB under different preemption mechanisms.
 - **Figure 10**: RocksDB performance achieved by Aspen compared to other systems.
-
-To run these experiments, in additon to the prerequisites mentioned in [How to Build and Run](#how-to-build-and-run), you need to have `clang-11`, `clang++-11` and `opt-11`. You can verify their availability by running the following commands:
-
-```sh
-clang-11 --version
-clang++-11 --version
-opt-11 --version
-```
 
 ### Aspen-Go 
 
