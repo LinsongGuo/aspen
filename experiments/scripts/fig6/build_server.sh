@@ -19,9 +19,9 @@ option=$1
 
 # Copy the corresponding config file
 if [[ "$option" == "concord-fine_tuned" ]]; then
-    cp "$FIG6_DIR/configs/concord.config" "$HOME_DIR/build/config"
+    cp "$FIG6_DIR/configs/concord_config" "$HOME_DIR/build/config"
 else
-    cp "$FIG6_DIR/configs/$option.config" "$HOME_DIR/build/config"
+    cp "$FIG6_DIR/configs/$option_config" "$HOME_DIR/build/config"
 fi
 
 # Build the iokernel and Caladan runtime

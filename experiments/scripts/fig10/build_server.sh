@@ -20,7 +20,7 @@ if [[ "$option" == "libpreemptible" ]]; then
     option="aspen_wo2queue_woskip"
 fi
 
-cp $FIG10_DIR/configs/$option.config $HOME_DIR/build/config
+cp $FIG10_DIR/configs/$option_config $HOME_DIR/build/config
 
 # Build the iokernel and Caladan runtime
 $SCRIPT_DIR/caladan.sh

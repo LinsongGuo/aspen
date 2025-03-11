@@ -278,18 +278,15 @@ fn run_tcp_server(backend: Backend, addr: SocketAddrV4, worker: Arc<FakeWorker>)
 }
 
 fn run_spawner_server(addr: SocketAddrV4, workerspec: &str) {
-    println!("################ run_spawner_server");
     static mut SPAWNER_WORKER: Option<FakeWorker> = None;
     unsafe {
         SPAWNER_WORKER = Some(FakeWorker::create(workerspec).unwrap());
     }
     extern "C" fn echo(d: *mut shenango::ffi::udp_spawn_data) {
         unsafe {
-            // println!("##### rcv: {}", (*d).len);
             let buf = slice::from_raw_parts((*d).buf as *mut u8, (*d).len as usize);
             let mut payload = Payload::deserialize(&mut &buf[..]).unwrap();
             let worker = SPAWNER_WORKER.as_ref().unwrap();
-            // println!("##### work");
             worker.work(payload.work_iterations, payload.randomness);
             payload.randomness = shenango::rdtsc();
             let mut array = ArrayVec::<_, PAYLOAD_SIZE>::new();

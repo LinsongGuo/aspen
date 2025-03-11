@@ -12,7 +12,7 @@ CONFIG_DEBUG=n
 CONFIG_OPTIMIZE=n
 # Allow runtimes to access Mellanox ConnectX-5 NICs directly (kernel bypass)
 # All experiments use y
-CONFIG_DIRECTPATH=n
+CONFIG_DIRECTPATH=y
 # Build with clang instead of gcc
 CONFIG_CLANG=n
 # The approach to handle non-preemptive code

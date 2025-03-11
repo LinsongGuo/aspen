@@ -5,6 +5,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DF_RESULT_DIR = os.path.join(SCRIPT_DIR, 'results/cost_df')
 ROCKSDB_RESULT_DIR = os.path.join(SCRIPT_DIR, 'results/cost_rocksdb')
