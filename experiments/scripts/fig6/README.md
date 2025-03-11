@@ -27,8 +27,7 @@
    ```
    Before running, you need to update the CONFIGURATION SETTINGS at the beginning of the Python script to reflect your machine's information.
    `<option>` can be `non-preemptive`, `signal`, `uintr`, `concord-fine_tuned`, or `concord`. 
-   The script launches the load generator on the client machine and the Dataframe server on the server machine.  
-   The results are saved in `experiments/result/fig6/<option>` on the client machine.
+   The script launches the load generator on the client machine and the Dataframe server on the server machine.The results are saved in `experiments/result/fig6/<option>` on the client machine.
 
 5. **Plot the results**  
    Once the results of all options are collected, on the client machine, run:  

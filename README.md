@@ -108,8 +108,7 @@ currently run as root and have a unique IP address.
 
 ## Aspen Experiments
 
-This repository (along with its multiple submodules) contains instructions and scripts for the experiments presented in the paper. The scripts are located in `experiments/scripts`.  
-Within this directory, each subfolder corresponds to a figure from the paper and includes the scripts along with a README explaining how to use them.
+This repository (along with its multiple submodules) contains instructions and scripts for running the experiments presented in the paper. The scripts are located in the directory `experiments/scripts`. Within the directory, each subfolder corresponds to a figure from the paper and includes the scripts along with a README explaining how to use them.
 For example, `experiments/scripts/fig5` contains the scripts for the Figure 5 experiment, along with a README.
 
 ### Benchmarking Study
@@ -122,7 +121,7 @@ This study evaluates three preemption mechanisms: signals, compiler instrumentat
 
 ### Aspen-KB
 
-This study evaluates preemption mechanisms in a low-overhead, kernel-bypass user-space runtime system:
+This study evaluates preemption mechanisms and policies in a low-overhead, kernel-bypass user-space runtime system:
 
 - **Figure 5**: RocksDB performance in Aspen-KB under different preemption mechanisms.
 - **Figure 6**: DataFrame performance in Aspen-KB under different preemption mechanisms.
@@ -141,8 +140,7 @@ opt-11 --version
 This study is conducted in the context of the widely used Go runtime, which serves millions of developers. Aspen-Go extends the standard Go runtime (version 1.21) by enabling finer-grained preemption and network polling.
 
 - **Figure 7**: BadgerDB performance with unmodified Go and Aspen-Go. 
-The data used to populate BadgerDB is available at:  
-  [Google Drive Link](https://drive.google.com/file/d/1umPzzNkfNgkitHGt_wl-5t2stFBN6o4w/view?usp=share_link).
+The data used to populate BadgerDB is available at [Google Drive](https://drive.google.com/file/d/1umPzzNkfNgkitHGt_wl-5t2stFBN6o4w/view?usp=share_link).
 
 
 ### Experiment Setup

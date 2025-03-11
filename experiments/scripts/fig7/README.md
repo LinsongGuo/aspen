@@ -26,7 +26,7 @@ This compiles the Aspen-Go runtime and uses Aspen-Go to compile the BadgerDB ser
    ```
    Before running, you need to update the CONFIGURATION SETTINGS at the beginning of the Python script to reflect your machine's information.
    The script launches the load generator on the client machine and the BadgerDB server on the server machine. The results are saved in `experiments/result/fig7` on the client machine. 
-   The logs of the BadgerDB server are located at aspen-go/badger-bench/server/server_log on the server machine.
+   The logs of the BadgerDB server are located at `aspen-go/badger-bench/server/server_log` on the server machine.
 
 5. **Plot the results**  
    Once the results of all options are collected, on the client machine, run:  
