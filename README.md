@@ -1,5 +1,7 @@
 # Aspen
 
+**The Benefits and Limitations of User Interrupts for Preemptive Userspace Scheduling (NSDI'25)**
+
 Aspen is a preemptive user-space runtime system that enables fine-grained, microsecond-level preemption. 
 For more details, refer to the paper. 
 Aspen is built on top of [Caladan](https://github.com/shenango/caladan.git).
@@ -60,10 +62,11 @@ curl https://sh.rustup.rs -sSf | sh
 rustup default nightly
 ```
 ```
-cd apps/synthetic
+pushd apps/synthetic
 cargo clean
 cargo update
 cargo build --release
+popd
 ```
 
 6) Run the synthetic application with a client and server. The client
