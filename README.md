@@ -126,6 +126,8 @@ currently run as root and have a unique IP address.
 This repository (along with its multiple submodules) contains instructions and scripts for running the experiments presented in the paper. The scripts are located in the directory `experiments/scripts`. Within the directory, each subfolder corresponds to a figure from the paper and includes the scripts along with a README explaining how to use them.
 For example, `experiments/scripts/fig5` contains the scripts for the Figure 5 experiment, along with a README.
 
+**For Figure 1, the code is located in the `concord` submodule, which is forked from https://github.com/dslab-epfl/concord.git. Please refer to the README inside the submodule for instructions on how to run it.**
+
 ### Prerequisites
 
 To run all of the following experiments except Figure 1, you need to complete Steps 1, 2, 3, and 5 from [How to Build and Run](#how-to-build-and-run).
