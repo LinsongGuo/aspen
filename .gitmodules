@@ -37,3 +37,6 @@
 	path = aspen-go/badger-bench
 	url = https://github.com/LinsongGuo/badger-bench.git
 	branch = experiment
+[submodule "concord"]
+	path = concord
+	url = https://github.com/LinsongGuo/concord.git
